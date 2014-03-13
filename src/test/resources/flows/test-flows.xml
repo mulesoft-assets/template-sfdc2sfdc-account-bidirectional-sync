@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.5.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+
+	<sub-flow name="createContactInAFlow" doc:name="createContactInAFlow">
+		<sfdc:create config-ref="TestSalesforceA" type="Contact"
+			doc:name="Salesforce">
+			<sfdc:objects ref="#[payload]" />
+		</sfdc:create>
+	</sub-flow>
+
+	<sub-flow name="createContactInBFlow" doc:name="createContactInBFlow">
+		<sfdc:create config-ref="TestSalesforceB" type="Contact"
+			doc:name="Salesforce">
+			<sfdc:objects ref="#[payload]" />
+		</sfdc:create>
+	</sub-flow>
+
+	<sub-flow name="queryContactFromAFlow" doc:name="queryContactFromAFlow">
+		<sfdc:query-single config-ref="SalesforceA"
+			query="SELECT FirstName, LastName, Email, Description FROM Contact WHERE (Email = '#[payload['Email']]'  )"
+			doc:name="Salesforce" />
+	</sub-flow>
+
+	<sub-flow name="queryContactFromBFlow" doc:name="queryContactFromBFlow">
+		<sfdc:query-single config-ref="SalesforceB"
+			query="SELECT FirstName, LastName, Email, Description FROM Contact WHERE (Email = '#[payload['Email']]'  )"
+			doc:name="Salesforce" />
+	</sub-flow>
+
+	<sub-flow name="retrieveContactFromAFlow" doc:name="retrieveContactFromAFlow">
+		<sfdc:retrieve config-ref="SalesforceA" type="Contact"
+			doc:name="Salesforce">
+			<sfdc:ids>
+				<sfdc:id>#[payload]</sfdc:id>
+			</sfdc:ids>
+			<sfdc:fields>
+				<sfdc:field>FirstName</sfdc:field>
+				<sfdc:field>LastName</sfdc:field>
+				<sfdc:field>Email</sfdc:field>
+				<sfdc:field>Description</sfdc:field>
+				<sfdc:field>LastModifiedDate</sfdc:field>
+			</sfdc:fields>
+		</sfdc:retrieve>
+	</sub-flow>
+
+	<sub-flow name="retrieveContactFromBFlow" doc:name="retrieveContactFromBFlow">
+		<sfdc:retrieve config-ref="SalesforceB" type="Contact"
+			doc:name="Salesforce">
+			<sfdc:ids>
+				<sfdc:id>#[payload]</sfdc:id>
+			</sfdc:ids>
+			<sfdc:fields>
+				<sfdc:field>FirstName</sfdc:field>
+				<sfdc:field>LastName</sfdc:field>
+				<sfdc:field>Email</sfdc:field>
+				<sfdc:field>Description</sfdc:field>
+				<sfdc:field>LastModifiedDate</sfdc:field>
+			</sfdc:fields>
+		</sfdc:retrieve>
+	</sub-flow>
+
+	<sub-flow name="deleteContactFromAFlow" doc:name="deleteContactFromAFlow">
+		<sfdc:delete config-ref="SalesforceA" doc:name="Salesforce">
+			<sfdc:ids ref="#[payload]" />
+		</sfdc:delete>
+	</sub-flow>
+
+	<sub-flow name="deleteContactFromBFlow" doc:name="deleteContactFromBFlow">
+		<sfdc:delete config-ref="SalesforceB" doc:name="Salesforce">
+			<sfdc:ids ref="#[payload]" />
+		</sfdc:delete>
+	</sub-flow>
+	
+	<sfdc:config name="TestSalesforceA" username="${test.sfdc.a.username}"
+		password="${test.sfdc.a.password}" securityToken="${test.sfdc.a.securityToken}"
+		url="${test.sfdc.a.url}" doc:name="Salesforce"
+		doc:description="One of your SalesForce instances, order does not matter.">
+		<sfdc:connection-pooling-profile
+			initialisationPolicy="INITIALISE_ONE" exhaustedAction="WHEN_EXHAUSTED_GROW" />
+	</sfdc:config>
+
+	<sfdc:config name="TestSalesforceB" username="${test.sfdc.b.username}"
+		password="${test.sfdc.b.password}" securityToken="${test.sfdc.b.securityToken}"
+		url="${test.sfdc.b.url}" doc:name="Salesforce"
+		doc:description="Your other SalesForce instances, order does not matter.">
+		<sfdc:connection-pooling-profile
+			initialisationPolicy="INITIALISE_ONE" exhaustedAction="WHEN_EXHAUSTED_GROW" />
+	</sfdc:config>
+
+</mule>
