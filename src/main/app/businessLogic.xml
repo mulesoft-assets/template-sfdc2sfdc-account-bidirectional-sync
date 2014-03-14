@@ -19,21 +19,24 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
 			<poll doc:name="Poll">
 				<fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="10000" />
 				<watermark variable="lastQueryDateA" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]" />
-				<sfdc:query config-ref="SalesforceA" doc:name="fetch contacts from A with filtering criteria" query="dsql:SELECT AssistantName,AssistantPhone,Birthdate,Department,Description,Email,EmailBouncedDate,EmailBouncedReason,Fax,FirstName,HomePhone,Jigsaw,LastActivityDate,LastCURequestDate,LastCUUpdateDate,LastModifiedById,LastModifiedDate,LastName,LeadSource,MailingCity,MailingCountry,MailingState,MobilePhone,OtherCity,OtherCountry,OtherLatitude,OtherLongitude,OtherPhone,OtherPostalCode,OtherState,OtherStreet,Phone,Salutation,Title FROM Contact WHERE (LastModifiedDate &gt; #[flowVars['lastQueryDateA']] AND Email &lt;&gt; null) ORDER BY LastModifiedDate ASC LIMIT 200"></sfdc:query>
+				<sfdc:query config-ref="SalesforceA" doc:name="fetch accounts from A" query="dsql:SELECT AccountNumber,AccountSource,AnnualRevenue,BillingCity,BillingCountry,BillingPostalCode,BillingState,BillingStreet,Description,Fax,Id,Industry,LastModifiedById,LastModifiedDate,Name,OwnerId,Ownership,ParentId,Phone,Rating,RecordTypeId,ShippingCity,ShippingCountry,ShippingPostalCode,ShippingState,ShippingStreet,Sic,SicDesc,Site,TickerSymbol,Type,Website FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDateA']] ORDER BY LastModifiedDate ASC LIMIT 200"></sfdc:query>
 			</poll>
+            <logger message="A Accounts polled." level="INFO" doc:name="Logger"/>
             <enricher source="#[payload]" target="#[flowVars['integrationUser']]" doc:name="store integration user id">
 	            <sfdc:query-single config-ref="SalesforceB" query="SELECT Id FROM User WHERE Username = '${sfdc.b.username}'" doc:name="query integration user id from B" />
             </enricher>
+            <logger message="A Integration user: #[flowVars['integrationUser']]" level="INFO" doc:name="Logger"/>
         </batch:input>
         <batch:process-records>
-            <batch:step name="forEachContactInAGetContactInBStep">
-                <batch:set-record-variable variableName="contactInSourceInstance" value="#[payload]" doc:name="store contact in source instance"/>
-                <enricher source="#[payload]" target="#[recordVars['contactInTargetInstance']]" doc:name="store contact in target instance">
-	                <sfdc:query-single config-ref="SalesforceB" query="SELECT Id, FirstName, LastName, Email, LastModifiedDate FROM Contact WHERE (Email LIKE '#[payload['Email']]')" doc:name="query contact from B instance"/>
+            <batch:step name="forEachAccountInAGetAccounttInBStep">
+                <logger message="HELLO A: #[payload]" level="INFO" doc:name="Logger"/>
+                <batch:set-record-variable variableName="contactInSourceInstance" value="#[payload]" doc:name="store account in source instance"/>
+                <enricher source="#[payload]" target="#[recordVars['contactInTargetInstance']]" doc:name="store account">
+	                <sfdc:query-single config-ref="SalesforceB" query="SELECT Id, Name, LastModifiedDate FROM Account WHERE (Name = '#[payload['Name']]')" doc:name="query account from B"/>
                 </enricher>
             </batch:step>
-            <batch:step name="forEachContactThatShouldBeUpsertedInB" filter-expression="#[recordVars['contactInTargetInstance'] is NullPayload ? false : (recordVars['contactInTargetInstance'].get('LastModifiedDate') &gt;= recordVars['contactInSourceInstance'].get('LastModifiedDate')) || (flowVars['integrationUser'].get('Id') == recordVars['contactInSourceInstance'].get('LastModifiedById'))]">
-				<expression-component doc:name="prepare contact for upsert"><![CDATA[
+            <batch:step name="forEachAccountThatShouldBeUpsertedInB" filter-expression="#[recordVars['contactInTargetInstance'] is NullPayload ? false : (recordVars['contactInTargetInstance'].get('LastModifiedDate') &gt;= recordVars['contactInSourceInstance'].get('LastModifiedDate')) || (flowVars['integrationUser'].get('Id') == recordVars['contactInSourceInstance'].get('LastModifiedById'))]">
+				<expression-component doc:name="prepare account for upsert"><![CDATA[
 					if(recordVars['contactInTargetInstance'] is org.mule.transport.NullPayload) {
 						recordVars['contactInSourceInstance'].remove('Id');
 						recordVars['contactInSourceInstance'].remove('LastModifiedById');
@@ -45,7 +48,7 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
 					}
 				]]></expression-component>
                 <batch:commit size="200" doc:name="Batch Commit">
-			        <sfdc:upsert config-ref="SalesforceB" externalIdFieldName="Id" type="Contact" doc:name="upsert contacts in B">
+			        <sfdc:upsert config-ref="SalesforceB" externalIdFieldName="Id" type="Account" doc:name="upsert account in B">
 			            <sfdc:objects ref="#[payload]"/>
 			        </sfdc:upsert>
 			        <logger message="Upsert Salesforce response: #[payload]" level="INFO" doc:name="log response"/>
@@ -60,22 +63,25 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
 			<poll doc:name="Poll">
 				<fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="10000" />
 				<watermark variable="lastQueryDateB" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]" />
-				<sfdc:query config-ref="SalesforceB" doc:name="fetch contacts from B with filtering criteria"
-					query="dsql:SELECT AssistantName,AssistantPhone,Birthdate,Department,Description,Email,EmailBouncedDate,EmailBouncedReason,Fax,FirstName,HomePhone,Jigsaw,LastActivityDate,LastCURequestDate,LastCUUpdateDate,LastModifiedById,LastModifiedDate,LastName,LeadSource,MailingCity,MailingCountry,MailingState,MobilePhone,OtherCity,OtherCountry,OtherLatitude,OtherLongitude,OtherPhone,OtherPostalCode,OtherState,OtherStreet,Phone,Salutation,Title FROM Contact WHERE (LastModifiedDate &gt; #[flowVars['lastQueryDateB']] AND Email &lt;&gt; null) ORDER BY LastModifiedDate ASC LIMIT 200"></sfdc:query>
+				<sfdc:query config-ref="SalesforceB" doc:name="fetch accounts from B"
+					query="dsql:SELECT AccountNumber,AccountSource,AnnualRevenue,BillingCity,BillingCountry,BillingPostalCode,BillingState,BillingStreet,Description,Fax,Id,Industry,LastModifiedById,LastModifiedDate,Name,OwnerId,Ownership,ParentId,Phone,Rating,RecordTypeId,ShippingCity,ShippingCountry,ShippingPostalCode,ShippingState,ShippingStreet,Sic,SicDesc,Site,TickerSymbol,Type,Website FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDateB']] ORDER BY LastModifiedDate ASC LIMIT 200"></sfdc:query>
 			</poll>
+            <logger message="B Accounts polled." level="INFO" doc:name="Logger"/>
             <enricher source="#[payload]" target="#[flowVars['integrationUser']]" doc:name="store integration user id">
 	            <sfdc:query-single config-ref="SalesforceA" query="SELECT Id FROM User WHERE Username = '${sfdc.a.username}'" doc:name="query integration user id from A"/>
             </enricher>
+            <logger message="B Integration user: #[flowVars['integrationUser']]" level="INFO" doc:name="Logger"/>
         </batch:input>
         <batch:process-records>
-            <batch:step name="forEachContactInBGetContactInAStep">
-                <batch:set-record-variable variableName="contactInSourceInstance" value="#[payload]" doc:name="store contact in source instance"/>
-                <enricher source="#[payload]" target="#[recordVars['contactInTargetInstance']]" doc:name="store contact in source instance">
-		            <sfdc:query-single config-ref="SalesforceA" query="SELECT Id, FirstName, LastName, Email, LastModifiedDate FROM Contact WHERE (Email LIKE '#[payload['Email']]')" doc:name="query contact from Salesforce A instance"/>
+            <batch:step name="forEachAccountInBGetAccountInAStep">
+                <logger message="HELLO B: #[payload]" level="INFO" doc:name="Logger"/>
+                <batch:set-record-variable variableName="contactInSourceInstance" value="#[payload]" doc:name="store account in source instance"/>
+                <enricher source="#[payload]" target="#[recordVars['contactInTargetInstance']]" doc:name="store account">
+		            <sfdc:query-single config-ref="SalesforceA" query="SELECT Id, Name, LastModifiedDate FROM Account WHERE (Name = '#[payload['Name']]')" doc:name="query account from A"/>
                 </enricher>
             </batch:step>
-            <batch:step name="forEachContactThatShouldBeUpsertedInA" filter-expression="#[recordVars['contactInTargetInstance'] is NullPayload ? false : (recordVars['contactInTargetInstance'].get('LastModifiedDate') &gt;= recordVars['contactInSourceInstance'].get('LastModifiedDate')) || (flowVars['integrationUser'].get('Id') == recordVars['contactInSourceInstance'].get('LastModifiedById'))]">
-				<expression-component doc:name="prepare contact for upsert"><![CDATA[
+            <batch:step name="forEachAccountThatShouldBeUpsertedInA" filter-expression="#[recordVars['contactInTargetInstance'] is NullPayload ? false : (recordVars['contactInTargetInstance'].get('LastModifiedDate') &gt;= recordVars['contactInSourceInstance'].get('LastModifiedDate')) || (flowVars['integrationUser'].get('Id') == recordVars['contactInSourceInstance'].get('LastModifiedById'))]">
+				<expression-component doc:name="prepare account for upsert"><![CDATA[
 					if(recordVars['contactInTargetInstance'] is org.mule.transport.NullPayload) {
 						recordVars['contactInSourceInstance'].remove('Id');
 						recordVars['contactInSourceInstance'].remove('LastModifiedById');
@@ -87,7 +93,7 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
 					}
 				]]></expression-component>
                 <batch:commit size="200" doc:name="Batch Commit">
-			        <sfdc:upsert config-ref="SalesforceA" externalIdFieldName="Id" type="Contact" doc:name="upsert contact in A">
+			        <sfdc:upsert config-ref="SalesforceA" externalIdFieldName="Id" type="Account" doc:name="upsert account in A">
 			            <sfdc:objects ref="#[payload]"/>
 			        </sfdc:upsert>
 			        <logger message="Upsert Salesforce response: #[payload]" level="INFO" doc:name="log response"/>
