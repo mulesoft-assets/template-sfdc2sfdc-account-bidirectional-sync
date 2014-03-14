@@ -33,15 +33,15 @@ import com.sforce.soap.partner.SaveResult;
  * 
  */
 @SuppressWarnings("unchecked")
-public class BidirectionalContactSyncTestIT extends AbstractTemplatesTestCase {
+public class BidirectionalAccountSyncTestIT extends AbstractTemplatesTestCase {
 
 	private static final String POLL_A_BATCH_JOB_NAME = "fromAToBBatch";
 	private static final String POLL_B_BATCH_JOB_NAME = "fromBToABatch";
-	private static final String ANYPOINT_TEMPLATE_NAME = "sfdc2sfdc-bidirectional-contact-sync";
+	private static final String ANYPOINT_TEMPLATE_NAME = "sfdc2sfdc-bidirectional-account-sync";
 	private static final int TIMEOUT_MILLIS = 60;
 	
-	private static List<String> contactsCreatedInA = new ArrayList<String>();
-	private static List<String> contactsCreatedInB = new ArrayList<String>();
+	private static List<String> accountsCreatedInA = new ArrayList<String>();
+	private static List<String> accountsCreatedInB = new ArrayList<String>();
 	private static SubflowInterceptingChainLifecycleWrapper deleteContactFromAFlow;
 	private static SubflowInterceptingChainLifecycleWrapper deleteContactFromBFlow;
 	
@@ -108,12 +108,12 @@ public class BidirectionalContactSyncTestIT extends AbstractTemplatesTestCase {
 	
 	private static void cleanUpSandboxesByRemovingTestContacts() throws MuleException, Exception {
 		final List<String> idList = new ArrayList<String>();
-		for (String contact : contactsCreatedInA) {
+		for (String contact : accountsCreatedInA) {
 			idList.add(contact);
 		}
 		deleteContactFromAFlow.process(getTestEvent(idList, MessageExchangePattern.REQUEST_RESPONSE));
 		idList.clear();
-		for (String contact : contactsCreatedInB) {
+		for (String contact : accountsCreatedInB) {
 			idList.add(contact);
 		}
 		deleteContactFromBFlow.process(getTestEvent(idList, MessageExchangePattern.REQUEST_RESPONSE));
@@ -134,8 +134,8 @@ public class BidirectionalContactSyncTestIT extends AbstractTemplatesTestCase {
 				.with("Description", "Zeze's adoptive father");
 
 		// Create contacts in sand-boxes and keep track of them for posterior cleaning up
-		contactsCreatedInA.add(createTestContactsInSfdcSandbox(justCreatedContact.build(), createContactInAFlow));
-		contactsCreatedInB.add(createTestContactsInSfdcSandbox(updatedContact.build(), createContactInBFlow));
+		accountsCreatedInA.add(createTestContactsInSfdcSandbox(justCreatedContact.build(), createContactInAFlow));
+		accountsCreatedInB.add(createTestContactsInSfdcSandbox(updatedContact.build(), createContactInBFlow));
 
 		// Execution		
 		executeWaitAndAssertBatchJob(POLL_A_BATCH_JOB_NAME);
