@@ -1,4 +1,4 @@
-package org.mule.templates.test.util;
+package org.mule.templates;
 
 import java.io.File;
 import java.io.FileInputStream;
