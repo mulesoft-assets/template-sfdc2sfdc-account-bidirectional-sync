@@ -10,76 +10,45 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
 http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
 
-	<sub-flow name="createContactInAFlow" doc:name="createContactInAFlow">
-		<sfdc:create config-ref="TestSalesforceA" type="Contact"
-			doc:name="Salesforce">
-			<sfdc:objects ref="#[payload]" />
-		</sfdc:create>
-	</sub-flow>
+	<sub-flow name="createAccountInAFlow" doc:name="createAccountFlowA">
+        <sfdc:create config-ref="TestSalesforceA" type="Account" doc:name="Create account in A">
+            <sfdc:objects ref="#[payload]"/>
+        </sfdc:create>
+        <logger level="INFO" message="Create Accounts in A result: #[payload]"/>
+    </sub-flow>
 
-	<sub-flow name="createContactInBFlow" doc:name="createContactInBFlow">
-		<sfdc:create config-ref="TestSalesforceB" type="Contact"
-			doc:name="Salesforce">
-			<sfdc:objects ref="#[payload]" />
-		</sfdc:create>
-	</sub-flow>
-
-	<sub-flow name="queryContactFromAFlow" doc:name="queryContactFromAFlow">
-		<sfdc:query-single config-ref="SalesforceA"
-			query="SELECT FirstName, LastName, Email, Description FROM Contact WHERE (Email = '#[payload['Email']]'  )"
-			doc:name="Salesforce" />
-	</sub-flow>
-
-	<sub-flow name="queryContactFromBFlow" doc:name="queryContactFromBFlow">
-		<sfdc:query-single config-ref="SalesforceB"
-			query="SELECT FirstName, LastName, Email, Description FROM Contact WHERE (Email = '#[payload['Email']]'  )"
-			doc:name="Salesforce" />
-	</sub-flow>
-
-	<sub-flow name="retrieveContactFromAFlow" doc:name="retrieveContactFromAFlow">
-		<sfdc:retrieve config-ref="SalesforceA" type="Contact"
-			doc:name="Salesforce">
-			<sfdc:ids>
-				<sfdc:id>#[payload]</sfdc:id>
-			</sfdc:ids>
-			<sfdc:fields>
-				<sfdc:field>FirstName</sfdc:field>
-				<sfdc:field>LastName</sfdc:field>
-				<sfdc:field>Email</sfdc:field>
-				<sfdc:field>Description</sfdc:field>
-				<sfdc:field>LastModifiedDate</sfdc:field>
-			</sfdc:fields>
-		</sfdc:retrieve>
-	</sub-flow>
-
-	<sub-flow name="retrieveContactFromBFlow" doc:name="retrieveContactFromBFlow">
-		<sfdc:retrieve config-ref="SalesforceB" type="Contact"
-			doc:name="Salesforce">
-			<sfdc:ids>
-				<sfdc:id>#[payload]</sfdc:id>
-			</sfdc:ids>
-			<sfdc:fields>
-				<sfdc:field>FirstName</sfdc:field>
-				<sfdc:field>LastName</sfdc:field>
-				<sfdc:field>Email</sfdc:field>
-				<sfdc:field>Description</sfdc:field>
-				<sfdc:field>LastModifiedDate</sfdc:field>
-			</sfdc:fields>
-		</sfdc:retrieve>
-	</sub-flow>
-
-	<sub-flow name="deleteContactFromAFlow" doc:name="deleteContactFromAFlow">
-		<sfdc:delete config-ref="SalesforceA" doc:name="Salesforce">
-			<sfdc:ids ref="#[payload]" />
-		</sfdc:delete>
-	</sub-flow>
-
-	<sub-flow name="deleteContactFromBFlow" doc:name="deleteContactFromBFlow">
-		<sfdc:delete config-ref="SalesforceB" doc:name="Salesforce">
-			<sfdc:ids ref="#[payload]" />
-		</sfdc:delete>
-	</sub-flow>
+	<sub-flow name="createAccountInBFlow" doc:name="createAccountFlowB">
+        <sfdc:create config-ref="TestSalesforceB" type="Account" doc:name="Create account in B">
+            <sfdc:objects ref="#[payload]"/>
+        </sfdc:create>
+        <logger level="INFO" message="Create Accounts in B result: #[payload]"/>
+    </sub-flow>
+    
+	<sub-flow name="queryAccountFromAFlow" doc:name="retrieveAccountFlow">
+        <sfdc:query-single config-ref="SalesforceA" query="SELECT Name, Description FROM Account WHERE Name = '#[payload['Name']]'" doc:name="Salesforce"/>
+        <logger level="INFO" message="Retrieve Accounts result: #[payload]"/>
+    </sub-flow>
 	
+	<sub-flow name="queryAccountFromBFlow" doc:name="retrieveAccountFlow">
+        <sfdc:query-single config-ref="SalesforceB" query="SELECT Name, Description FROM Account WHERE Name = '#[payload['Name']]'" doc:name="Salesforce"/>
+        <logger level="INFO" message="Retrieve Accounts result: #[payload]"/>
+    </sub-flow>
+
+	<sub-flow name="deleteAccountFromAFlow" doc:name="deleteAccountFromAFlow">
+        <sfdc:delete config-ref="SalesforceA" doc:name="Salesforce">
+            <sfdc:ids ref="#[payload]"/>
+        </sfdc:delete>
+        <logger level="INFO" message="Remove Accounts from A result: #[payload]"/>
+    </sub-flow>
+    
+	<sub-flow name="deleteAccountFromBFlow" doc:name="deleteAccountFromBFlow">
+        <sfdc:delete config-ref="SalesforceB" doc:name="Salesforce">
+            <sfdc:ids ref="#[payload]"/>
+        </sfdc:delete>
+        <logger level="INFO" message="Remove Accounts from B result: #[payload]"/>
+    </sub-flow>
+    
+
 	<sfdc:config name="TestSalesforceA" username="${test.sfdc.a.username}"
 		password="${test.sfdc.a.password}" securityToken="${test.sfdc.a.securityToken}"
 		url="${test.sfdc.a.url}" doc:name="Salesforce"

@@ -1,6 +1,6 @@
 package org.mule.templates.integration;
 
-import static org.mule.templates.builders.SfdcObjectBuilder.aContact;
+import static org.mule.templates.builders.SfdcObjectBuilder.anAccount;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,8 +20,8 @@ import org.mule.api.MuleException;
 import org.mule.api.lifecycle.InitialisationException;
 import org.mule.processor.chain.InterceptingChainLifecycleWrapper;
 import org.mule.processor.chain.SubflowInterceptingChainLifecycleWrapper;
+import org.mule.templates.AbstractTemplatesTestCase;
 import org.mule.templates.builders.SfdcObjectBuilder;
-import org.mule.templates.test.util.AbstractTemplatesTestCase;
 
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
@@ -29,7 +29,8 @@ import com.mulesoft.module.batch.BatchTestHelper;
 import com.sforce.soap.partner.SaveResult;
 
 /**
- * The objective of this class is validating the correct behavior of the flows for this Mule Anypoint Template
+ * The objective of this class is validating the correct behavior of the flows
+ * for this Mule Anypoint Template
  * 
  */
 @SuppressWarnings("unchecked")
@@ -39,31 +40,32 @@ public class BidirectionalAccountSyncTestIT extends AbstractTemplatesTestCase {
 	private static final String POLL_B_BATCH_JOB_NAME = "fromBToABatch";
 	private static final String ANYPOINT_TEMPLATE_NAME = "sfdc2sfdc-bidirectional-account-sync";
 	private static final int TIMEOUT_MILLIS = 60;
-	
+
 	private static List<String> accountsCreatedInA = new ArrayList<String>();
 	private static List<String> accountsCreatedInB = new ArrayList<String>();
-	private static SubflowInterceptingChainLifecycleWrapper deleteContactFromAFlow;
-	private static SubflowInterceptingChainLifecycleWrapper deleteContactFromBFlow;
-	
-	private SubflowInterceptingChainLifecycleWrapper createContactInAFlow;
-	private SubflowInterceptingChainLifecycleWrapper createContactInBFlow;
-	private InterceptingChainLifecycleWrapper queryContactFromAFlow;
-	private InterceptingChainLifecycleWrapper queryContactFromBFlow;
+	private static SubflowInterceptingChainLifecycleWrapper deleteAccountFromAFlow;
+	private static SubflowInterceptingChainLifecycleWrapper deleteAccountFromBFlow;
+
+	private SubflowInterceptingChainLifecycleWrapper createAccountInAFlow;
+	private SubflowInterceptingChainLifecycleWrapper createAccountInBFlow;
+	private InterceptingChainLifecycleWrapper queryAccountFromAFlow;
+	private InterceptingChainLifecycleWrapper queryAccountFromBFlow;
 	private BatchTestHelper batchTestHelper;
-	
-	
+
 	@BeforeClass
 	public static void beforeTestClass() {
 		// Set polling frequency to 10 seconds
 		System.setProperty("polling.frequency", "10000");
-		
+
 		// Set default water-mark expression to current time
 		System.clearProperty("watermark.default.expression");
 		DateTime now = new DateTime(DateTimeZone.UTC);
-		DateTimeFormatter dateFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-		System.setProperty("watermark.default.expression", now.toString(dateFormat));
+		DateTimeFormatter dateFormat = DateTimeFormat
+				.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+		System.setProperty("watermark.default.expression",
+				now.toString(dateFormat));
 	}
-	
+
 	@Before
 	public void setUp() throws MuleException {
 		stopAutomaticPollTriggering();
@@ -72,98 +74,121 @@ public class BidirectionalAccountSyncTestIT extends AbstractTemplatesTestCase {
 
 	@After
 	public void tearDown() throws MuleException, Exception {
-		cleanUpSandboxesByRemovingTestContacts();
+		cleanUpSandboxesByRemovingTestAccounts();
 	}
-	
+
 	private void stopAutomaticPollTriggering() throws MuleException {
 		stopFlowSchedulers(POLL_A_BATCH_JOB_NAME);
 		stopFlowSchedulers(POLL_B_BATCH_JOB_NAME);
 	}
 
 	private void getAndInitializeFlows() throws InitialisationException {
-		// Flow for creating contacts in sfdc A instance
-		createContactInAFlow = getSubFlow("createContactInAFlow");
-		createContactInAFlow.initialise();
+		// Flow for creating accounts in sfdc A instance
+		createAccountInAFlow = getSubFlow("createAccountInAFlow");
+		createAccountInAFlow.initialise();
 
-		// Flow for creating contacts in sfdc B instance
-		createContactInBFlow = getSubFlow("createContactInBFlow");
-		createContactInBFlow.initialise();
+		// Flow for creating accounts in sfdc B instance
+		createAccountInBFlow = getSubFlow("createAccountInBFlow");
+		createAccountInBFlow.initialise();
 
-		// Flow for deleting contacts in sfdc A instance
-		deleteContactFromAFlow = getSubFlow("deleteContactFromAFlow");
-		deleteContactFromAFlow.initialise();
+		// Flow for deleting accounts in sfdc A instance
+		deleteAccountFromAFlow = getSubFlow("deleteAccountFromAFlow");
+		deleteAccountFromAFlow.initialise();
 
-		// Flow for deleting contacts in sfdc B instance
-		deleteContactFromBFlow = getSubFlow("deleteContactFromBFlow");
-		deleteContactFromBFlow.initialise();
-		
-		// Flow for querying the contact in source system
-		queryContactFromAFlow = getSubFlow("queryContactFromAFlow");
-		queryContactFromAFlow.initialise();
+		// Flow for deleting accounts in sfdc B instance
+		deleteAccountFromBFlow = getSubFlow("deleteAccountFromBFlow");
+		deleteAccountFromBFlow.initialise();
 
-		// Flow for querying the contact in target system
-		queryContactFromBFlow = getSubFlow("queryContactFromBFlow");
-		queryContactFromBFlow.initialise();
+		// Flow for querying the account in A instance
+		queryAccountFromAFlow = getSubFlow("queryAccountFromAFlow");
+		queryAccountFromAFlow.initialise();
+
+		// Flow for querying the account in B instance
+		queryAccountFromBFlow = getSubFlow("queryAccountFromBFlow");
+		queryAccountFromBFlow.initialise();
 	}
-	
-	private static void cleanUpSandboxesByRemovingTestContacts() throws MuleException, Exception {
+
+	private static void cleanUpSandboxesByRemovingTestAccounts()
+			throws MuleException, Exception {
 		final List<String> idList = new ArrayList<String>();
-		for (String contact : accountsCreatedInA) {
-			idList.add(contact);
+		for (String account : accountsCreatedInA) {
+			idList.add(account);
 		}
-		deleteContactFromAFlow.process(getTestEvent(idList, MessageExchangePattern.REQUEST_RESPONSE));
+		deleteAccountFromAFlow.process(getTestEvent(idList,
+				MessageExchangePattern.REQUEST_RESPONSE));
 		idList.clear();
-		for (String contact : accountsCreatedInB) {
-			idList.add(contact);
+		for (String account : accountsCreatedInB) {
+			idList.add(account);
 		}
-		deleteContactFromBFlow.process(getTestEvent(idList, MessageExchangePattern.REQUEST_RESPONSE));
+		deleteAccountFromBFlow.process(getTestEvent(idList,
+				MessageExchangePattern.REQUEST_RESPONSE));
 	}
-	
+
 	@Test
-	public void whenUpdatingAContactInInstanceBTheBelongingContactGetsUpdatedInInstanceA() throws MuleException, Exception {
-		// Build test contacts
-		SfdcObjectBuilder contact = aContact()
-				.with("FirstName", "Manuel")
-				.with("LastName", "Valadares")
-				.with("MailingCountry", "US")
-				.with("Email", ANYPOINT_TEMPLATE_NAME + "-" + System.currentTimeMillis() + "portuga@mail.com");
+	public void whenUpdatingAnAccountInInstanceBTheBelongingAccountGetsUpdatedInInstanceA()
+			throws MuleException, Exception {
 
-		SfdcObjectBuilder justCreatedContact = contact
-				.with("Description", "Please enter your description here");
-		SfdcObjectBuilder updatedContact = contact
-				.with("Description", "Zeze's adoptive father");
+		// Build test accounts
+		SfdcObjectBuilder account = anAccount()
+				.with("Name", ANYPOINT_TEMPLATE_NAME + "-" + System.currentTimeMillis() + "Account")
+				.with("Phone", "123456789");
 
-		// Create contacts in sand-boxes and keep track of them for posterior cleaning up
-		accountsCreatedInA.add(createTestContactsInSfdcSandbox(justCreatedContact.build(), createContactInAFlow));
-		accountsCreatedInB.add(createTestContactsInSfdcSandbox(updatedContact.build(), createContactInBFlow));
+		SfdcObjectBuilder justCreatedAccount = account.with("Description",
+				"Old description");
+		SfdcObjectBuilder updatedAccount = account.with("Description",
+				"Some nice description");
 
-		// Execution		
+		// Create accounts in sand-boxes and keep track of them for posterior
+		// cleaning up
+		accountsCreatedInA.add(createTestAccountsInSfdcSandbox(
+				justCreatedAccount.build(), createAccountInAFlow));
+		accountsCreatedInB.add(createTestAccountsInSfdcSandbox(
+				updatedAccount.build(), createAccountInBFlow));
+
+		// Execution
 		executeWaitAndAssertBatchJob(POLL_A_BATCH_JOB_NAME);
 		executeWaitAndAssertBatchJob(POLL_B_BATCH_JOB_NAME);
-		
+
 		// Assertions
-		Map<String, String> retrievedContactFromA = (Map<String, String>) queryContact(contact.build(), queryContactFromAFlow);
-		Map<String, String> retrievedContactFromB = (Map<String, String>) queryContact(contact.build(), queryContactFromBFlow);
-		
-		final MapDifference<String, String> mapsDifference = Maps.difference(retrievedContactFromA, retrievedContactFromB);
-		Assert.assertTrue("Some contacts are not synchronized between systems. " + mapsDifference.toString(), mapsDifference.areEqual());
-		
-	}
-	
-	private Object queryContact(Map<String, Object> contact, InterceptingChainLifecycleWrapper queryContactFlow) throws MuleException, Exception {
-		return queryContactFlow.process(getTestEvent(contact, MessageExchangePattern.REQUEST_RESPONSE)).getMessage().getPayload();
+		Map<String, String> retrievedAccountFromA = (Map<String, String>) queryAccount(
+				account.build(), queryAccountFromAFlow);
+		Map<String, String> retrievedAccountFromB = (Map<String, String>) queryAccount(
+				account.build(), queryAccountFromBFlow);
+
+		final MapDifference<String, String> differences = Maps.difference(
+				retrievedAccountFromA, retrievedAccountFromB);
+		Assert.assertTrue(
+				"Some accounts are not synchronized between systems. "
+						+ differences.toString(), differences.areEqual());
+
 	}
 
-	private String createTestContactsInSfdcSandbox(Map<String, Object> contact, InterceptingChainLifecycleWrapper createContactFlow) throws MuleException, Exception {
-		List<Map<String, Object>> salesforceContacts = new ArrayList<Map<String, Object>>();
-		salesforceContacts.add(contact);
-		
-		final List<SaveResult> payloadAfterExecution = (List<SaveResult>) createContactFlow.process(
-				getTestEvent(salesforceContacts, MessageExchangePattern.REQUEST_RESPONSE)).getMessage().getPayload();
+	private Object queryAccount(Map<String, Object> account,
+			InterceptingChainLifecycleWrapper queryAccountFlow)
+			throws MuleException, Exception {
+		return queryAccountFlow
+				.process(
+						getTestEvent(account,
+								MessageExchangePattern.REQUEST_RESPONSE))
+				.getMessage().getPayload();
+	}
+
+	private String createTestAccountsInSfdcSandbox(Map<String, Object> account,
+			InterceptingChainLifecycleWrapper createAccountFlow)
+			throws MuleException, Exception {
+		List<Map<String, Object>> salesforceAccounts = new ArrayList<Map<String, Object>>();
+		salesforceAccounts.add(account);
+
+		final List<SaveResult> payloadAfterExecution = (List<SaveResult>) createAccountFlow
+				.process(
+						getTestEvent(salesforceAccounts,
+								MessageExchangePattern.REQUEST_RESPONSE))
+				.getMessage().getPayload();
 		return payloadAfterExecution.get(0).getId();
 	}
 
-	private void executeWaitAndAssertBatchJob(String flowConstructName) throws Exception {
+	private void executeWaitAndAssertBatchJob(String flowConstructName)
+			throws Exception {
 		// Execute synchronization
 		runSchedulersOnce(flowConstructName);
 
@@ -172,5 +197,5 @@ public class BidirectionalAccountSyncTestIT extends AbstractTemplatesTestCase {
 		batchTestHelper.awaitJobTermination(TIMEOUT_MILLIS * 10000, 500);
 		batchTestHelper.assertJobWasSuccessful();
 	}
-	
+
 }
