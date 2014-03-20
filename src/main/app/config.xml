@@ -17,19 +17,8 @@ http://www.mulesoft.org/schema/mule/objectstore http://www.mulesoft.org/schema/m
 	<context:property-placeholder
 		location="common.properties, mule.${mule.env:test}.properties" />
 
-	<sfdc:config name="SalesforceA" username="${sfdc.a.username}"
-		password="${sfdc.a.password}" securityToken="${sfdc.a.securityToken}"
-		url="${sfdc.a.url}" doc:name="Salesforce"
-		doc:description="sfdc instance A">
-		<sfdc:connection-pooling-profile
-			initialisationPolicy="INITIALISE_ONE" exhaustedAction="WHEN_EXHAUSTED_GROW" />
+	<sfdc:config name="Salesforce" doc:name="Salesforce" username="fake"  password="fake" securityToken="fake" url="${sfdc.url}" doc:description="sfdc global config">
+		<sfdc:connection-pooling-profile initialisationPolicy="INITIALISE_ONE" exhaustedAction="WHEN_EXHAUSTED_GROW" />
 	</sfdc:config>
 
-	<sfdc:config name="SalesforceB" username="${sfdc.b.username}"
-		password="${sfdc.b.password}" securityToken="${sfdc.b.securityToken}"
-		url="${sfdc.b.url}" doc:name="Salesforce"
-		doc:description="sfdc instance B">
-		<sfdc:connection-pooling-profile
-			initialisationPolicy="INITIALISE_ONE" exhaustedAction="WHEN_EXHAUSTED_GROW" />
-	</sfdc:config>
 </mule>

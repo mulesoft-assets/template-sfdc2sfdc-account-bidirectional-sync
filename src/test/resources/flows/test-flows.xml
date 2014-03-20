@@ -10,7 +10,7 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
 http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
 
-	<sub-flow name="createAccountInAFlow" doc:name="createAccountFlowA">
+<!-- 	<sub-flow name="createAccountInAFlow" doc:name="createAccountFlowA">
         <sfdc:create config-ref="TestSalesforceA" type="Account" doc:name="Create account in A">
             <sfdc:objects ref="#[payload]"/>
         </sfdc:create>
@@ -63,6 +63,6 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
 		doc:description="Your other SalesForce instances, order does not matter.">
 		<sfdc:connection-pooling-profile
 			initialisationPolicy="INITIALISE_ONE" exhaustedAction="WHEN_EXHAUSTED_GROW" />
-	</sfdc:config>
+	</sfdc:config> -->
 
 </mule>

@@ -16,4 +16,30 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
 	<!-- In this file you should declare all your inbound endpoints and from 
 		here control the access to your application -->
 
+    <flow name="triggerSyncFromA" doc:name="triggerSyncFromA">
+		<poll doc:name="Poll">
+			<fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="10000" />
+			<watermark variable="lastQueryDateA" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]" />
+			<sfdc:query config-ref="Salesforce" username="cesar.garcia@mulesoft.com.engineer" password="MKSFDCSBCesar7" securityToken="xqfwCUl7apQsLwh6Xq2AKi3X" doc:name="fetch accounts from A" query="dsql:SELECT AccountNumber,AccountSource,AnnualRevenue,BillingCity,BillingCountry,BillingPostalCode,BillingState,BillingStreet,Description,Fax,Id,Industry,LastModifiedById,LastModifiedDate,Name,OwnerId,Ownership,ParentId,Phone,Rating,RecordTypeId,ShippingCity,ShippingCountry,ShippingPostalCode,ShippingState,ShippingStreet,Sic,SicDesc,Site,TickerSymbol,Type,Website FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDateA']] ORDER BY LastModifiedDate ASC LIMIT 200" url="https://test.salesforce.com/services/Soap/u/28.0"></sfdc:query>
+		</poll>
+        <expression-component doc:name="set variables with A properties"><![CDATA[flowVars['sfdcUsername'] = '${sfdc.a.username}';
+flowVars['sfdcPassword'] = '${sfdc.a.password}';
+flowVars['sfdcSecurityToken'] = '${sfdc.a.securityToken}';
+flowVars['integrationUser'] = '${sfdc.a.integration.user.id}']]></expression-component>
+        <batch:execute name="syncBatch" doc:name="trigger Batch Execute"/>
+    </flow>
+
+    <flow name="triggerSyncFromB" doc:name="triggerSyncFromB" initialState="stopped">
+		<poll doc:name="Poll">
+			<fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="10000" />
+			<watermark variable="lastQueryDateB" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]" />
+			<sfdc:query config-ref="Salesforce" username="${sfdc.b.username}" password="${sfdc.b.password}" securityToken="${sfdc.b.securityToken}" doc:name="fetch accounts from B" query="dsql:SELECT AccountNumber,AccountSource,AnnualRevenue,BillingCity,BillingCountry,BillingPostalCode,BillingState,BillingStreet,Description,Fax,Id,Industry,LastModifiedById,LastModifiedDate,Name,OwnerId,Ownership,ParentId,Phone,Rating,RecordTypeId,ShippingCity,ShippingCountry,ShippingPostalCode,ShippingState,ShippingStreet,Sic,SicDesc,Site,TickerSymbol,Type,Website FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDateA']] ORDER BY LastModifiedDate ASC LIMIT 200" url="${sfdc.url}"></sfdc:query>
+		</poll>
+        <expression-component doc:name="set variables with B properties"><![CDATA[flowVars['sfdcUsername'] = ${sfdc.b.username};
+flowVars['sfdcPassword'] = ${sfdc.b.password};
+flowVars['sfdcSecurityToken'] = ${sfdc.b.securityToken};
+flowVars['integrationUser'] = ${sfdc.b.integration.user.id}]]></expression-component>
+        <batch:execute name="syncBatch" doc:name="trigger Batch Execute"/>
+    </flow>
+
 </mule>
