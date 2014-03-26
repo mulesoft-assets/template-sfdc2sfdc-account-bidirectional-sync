@@ -17,7 +17,7 @@ http://www.mulesoft.org/schema/mule/objectstore http://www.mulesoft.org/schema/m
 	<context:property-placeholder
 		location="common.properties, mule.${mule.env:test}.properties" />
 
-	<sfdc:config name="Salesforce" doc:name="Salesforce" username="fake"  password="fake" securityToken="fake" url="${sfdc.url}" doc:description="sfdc global config">
+	<sfdc:config name="Salesforce" doc:name="Salesforce" username="fake"  password="fake" securityToken="fake" url="${sfdc.a.url}" doc:description="sfdc global config">
 		<sfdc:connection-pooling-profile initialisationPolicy="INITIALISE_ONE" exhaustedAction="WHEN_EXHAUSTED_GROW" />
 	</sfdc:config>
 
