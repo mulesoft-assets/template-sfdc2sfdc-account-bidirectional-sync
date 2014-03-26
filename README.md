@@ -1,31 +1,49 @@
-# Anypoint Template: sfdc2sfdc-bidirectional-account-sync
+# Anypoint Template: Salesforce to Salesforce bi-directional account sync
 
-+ [Use Case](#usecase)
++ [Use case](#usecase)
++ [Template overview](#templateoverview)
 + [Run it!](#runit)
+    * [Properties to be configured](#propertiestobeconfigured)
     * [Running on CloudHub](#runoncloudhub)
     * [Running on premise](#runonopremise)
-        * [Properties to be configured](#propertiestobeconfigured)
 + [Customize It!](#customizeit)
     * [config.xml](#configxml)
     * [endpoints.xml](#endpointsxml)
     * [businessLogic.xml](#businesslogicxml)
     * [errorHandling.xml](#errorhandlingxml)
 
+## Use case <a name="usecase"/>
 
-# Use Case <a name="usecase"/>
+As a Salesforce admin, I want to have my accounts synchronized between two different Salesforce organizations
 
-As a Salesforce admin I want to have my Contacts syncronized between two different Salesforce orgs.
+## Template overview <a name="templateoverview"/>
 
-This Template should serve as a foundation for setting an online bi-directional sync of Contacts between two SalesForce instances, being able to specify filtering criterias. 
+Let's say we want to keep Salesforce instance *A* synchronized with Salesforce instance *B*. Then, the integration behavior can be summarized just with the following steps:
 
-The integration main behaviour is polling for changes (new Contacts or modified ones) that have occured in any of the Salesforces instances during a certain defined period of time. For those Contacts that both have not been updated yet the integration triggers an upsert (update or create depending the case) taking the last modification as the one that should be applied.
+1. Ask Salesforce *A*:
+> *Which changes have there been since the last time I got in touch with you?*
 
-Requirements have been set not only to be used as examples, but also to stablish starting point to adapt the integration to any given requirements.
+2. For each of the updates fetched in the previous step (1.), ask Salesforce *B*:
+> *Does the update received from A should be applied?*
+
+3. If Salesforce answer for the previous question (2.) is *Yes*, then *upsert* (create or update depending each particular case) B with the belonging change
+
+4. Repeat previous steps (1. to 3.) the other way around (using *B* as source instance and *A* as the target one)
+
+ Repeat *ad infinitum*:
+
+5. Ask Salesforce *A*:
+> *Which changes have there been since the question I've made in the step 1.?*
+
+And so on...
+  
+  
+The question for recent changes since a certain moment in nothing but a [poll inbound][1] with a [watermark][2] defined.
 
 
 # Run it! <a name="runit"/>
 
-In order to have your application up and running you just need to complete two simple steps:
+In order to have the template up and running just complete the two following steps:
 
  1. [Configure the application properties](#propertiestobeconfigured)
  2. Run it! ([on premise](#runonopremise) or [in Cloudhub](#runoncloudhub))
@@ -33,53 +51,41 @@ In order to have your application up and running you just need to complete two s
 
 ## Properties to be configured<a name="propertiestobeconfigured"/>
 
-In order to use this Anypoint Template you need to configure a couple of properties (credentials, configurations, etc.) either in properties file, or in CloudHub as Environment Variables. 
-
-### Detailed list of needed properties, (with examples):
-
-#### Application configuration
+### Application configuration
 + polling.frequency `10000`  
-This are the miliseconds that will run between two different checks for updates in Salesforce
+This are the miliseconds (also different time units can be used) that will run between two different checks for updates in Salesforce
 
 + watermark.default.expression `2014-02-25T11:00:00.000Z`  
-This property is an important one, as it configures what should be the start point of the synchronization. If the use case includes synchronizing every contact created from the begining of the times, you should use a date previous to any contact creation (perhaphs `1900-01-01T08:00:00.000Z` is a good choice). If you want to synchronize the contacts created from now on, then you should use a default value according to that requirement (for example, today is Febraury 25th of 2014 and it's eleven o'clock, then I would take the following value `2014-02-25T11:00:00.000Z`).
+This property is an important one, as it configures what should be the start point of the synchronization.The date format accepted in SFDC Query Language is either *YYYY-MM-DDThh:mm:ss+hh:mm* or you can use Constants. [More information about Dates in SFDC](http://www.salesforce.com/us/developer/docs/officetoolkit/Content/sforce_api_calls_soql_select_dateformats.htm)
 
-#### SalesForce Connector configuration for company A
-+ sfdc.a.username `bob.dylan@orga`
-+ sfdc.a.password `DylanPassword123`
+### SalesForce Connector configuration for company A
++ sfdc.a.username `jorge.drexler@mail.com`
++ sfdc.a.password `Noctiluca123`
 + sfdc.a.securityToken `avsfwCUl7apQs56Xq2AKi3X`
-+ sfdc.a.url `https://login.salesforce.com/services/Soap/u/26.0`
++ sfdc.a.url `https://login.salesforce.com/services/Soap/u/28.0`
 
-#### SalesForce Connector configuration for company B
-+ sfdc.b.username `joan.baez@orgb`
-+ sfdc.b.password `JoanBaez456`
+### SalesForce Connector configuration for company B
++ sfdc.b.username `mariano.cozzi@mail.com`
++ sfdc.b.password `LaRanitaDeLaBicicleta456`
 + sfdc.b.securityToken `ces56arl7apQs56XTddf34X`
-+ sfdc.b.url `https://login.salesforce.com/services/Soap/u/26.0`
++ sfdc.b.url `https://login.salesforce.com/services/Soap/u/28.0`
 
-
-### Some points to consider about configuration properties
-
-Polling Frecuency is expressed in miliseconds (different time units can be used) and the Watermark Default Expression defines the date to be used to query the first time the integration runs. [More details about polling and watermarking.](http://www.mulesoft.org/documentation/display/current/Poll+Reference)
-
-The date format accepted in SFDC Query Language is either YYYY-MM-DDThh:mm:ss+hh:mm or you can use Constants (Like YESTERDAY in the example). [More information about Dates in SFDC.](http://www.salesforce.com/us/developer/docs/officetoolkit/Content/sforce_api_calls_soql_select_dateformats.htm)
-
-The query fields list must include both 'Email' and 'LastModifiedDate' fields, as those fields are embedded in the integration business logic
 
 
 ## Running on CloudHub <a name="runoncloudhub"/>
 
-In order to [create your application on CloudHub](http://www.mulesoft.org/documentation/display/current/Hello+World+on+CloudHub) you should to go to Deployment > Advanced to set all environment variables detailed in **Properties to be configured** as well as the **mule.env**. 
-
-Once your app is all set and started, supposing you choose as domain name `sfdc2sfdc-bidirectional-contact-sync` to trigger the use case you just need to hit `http://sfdc2sfdc-bidirectional-contact-sync.cloudhub.io/synccontacts` and report will be sent to the emails configured.
+Running the template on CloudHub is as simple as follow the 4 steps detailed on the following documetation page: 
+  
+> [http://www.mulesoft.org/documentation/display/current/Hello+World+on+CloudHub](http://www.mulesoft.org/documentation/display/current/Hello+World+on+CloudHub)
 
 ## Running on premise <a name="runonopremise"/>
-Complete all properties in one of the property files, for example in [mule.prod.properties] (../blob/master/src/main/resources/mule.prod.properties) and run your app with the corresponding environment variable to use it. To follow the example, this will be `mule.env=prod`.
+Once all properties are filled in one of the template property files (for example in [mule.prod.properties] (https://github.com/mulesoft/sfdc2sfdc-bidirectional-account-sync/blob/master/src/main/resources/mule.prod.properties)) the template can be run by just choosing an enviromet and follow the steps detailed in the link placed below:
 
-After this,  the integration will fetch the updates occured since the date configured in the watermark.default.expression property.
+> [http://www.mulesoft.org/documentation/display/current/Hello+World+on+CloudHub](http://www.mulesoft.org/documentation/display/current/Deploying+Mule+Applications)
 
 # Customize It!<a name="customizeit"/>
-This brief guide intends to give a high level idea of how this Template is built and how you can change it according to your needs.
-As mule applications are based on XML files, this page will be organised by describing all the XML that conform the Template.
+This brief guide intends to give a high level idea of how this template is built and how you can change it according to your needs.
+As mule applications are based on XML files, this page will be organised by describing all the XML that conform the template.
 Of course more files will be found such as Test Classes and [Mule Application Files](http://www.mulesoft.org/documentation/display/current/Application+Format), but to keep it simple we will focus on the XMLs.
 
 Here is a list of the main XML files you'll find in this application:
@@ -112,3 +118,7 @@ This file holds the functional aspect of the template , directed by one flow res
 This is the right place to handle how your integration will react depending on the different exceptions. 
 This file holds a [Choice Exception Strategy](http://www.mulesoft.org/documentation/display/current/Choice+Exception+Strategy) that is referenced by the main flow in the business logic.
 ...
+
+
+  [1]: http://www.mulesoft.org/documentation/display/current/Poll+Reference
+  [2]: http://blogs.mulesoft.org/data-synchronizing-made-easy-with-mule-watermarks/
