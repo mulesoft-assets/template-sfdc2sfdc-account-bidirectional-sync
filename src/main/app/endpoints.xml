@@ -13,7 +13,26 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
 
-	<!-- In this file you should declare all your inbound endpoints and from 
-		here control the access to your application -->
+	<!-- This is the endponits file. In this file you should declare all your inbound and outbound endpoints, in order to control the access to your integration -->
+
+    <flow name="triggerSyncFromAFlow" doc:name="triggerSyncFromAFlow" processingStrategy="synchronous">
+		<poll doc:name="Poll">
+			<fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="10000" />
+			<watermark variable="lastQueryDateA" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]" />
+			<sfdc:query config-ref="SalesforceA" doc:name="fetch accounts from A" query="dsql:SELECT AccountNumber,AccountSource,AnnualRevenue,BillingCity,BillingCountry,BillingPostalCode,BillingState,BillingStreet,Description,Fax,Id,Industry,LastModifiedById,LastModifiedDate,Name,NumberOfEmployees,OwnerId,Ownership,ParentId,Phone,Rating,RecordTypeId,ShippingCity,ShippingCountry,ShippingPostalCode,ShippingState,ShippingStreet,Sic,SicDesc,Site,TickerSymbol,Type,Website FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDateA']] ORDER BY LastModifiedDate ASC LIMIT 200"></sfdc:query>
+		</poll>
+        <set-variable variableName="sourceSystem" value="A" doc:name="set A as source system" />
+        <batch:execute name="syncBatch" doc:name="trigger batch execution"/>
+    </flow>
+    
+	<flow name="triggerSyncFromBFlow" doc:name="triggerSyncFromBFlow" processingStrategy="synchronous">
+   		<poll doc:name="Poll">
+			<fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="10000" />
+			<watermark variable="lastQueryDateB" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]" />
+			<sfdc:query config-ref="SalesforceB" doc:name="fetch accounts from B" query="dsql:SELECT AccountNumber,AccountSource,AnnualRevenue,BillingCity,BillingCountry,BillingPostalCode,BillingState,BillingStreet,Description,Fax,Id,Industry,LastModifiedById,LastModifiedDate,Name,NumberOfEmployees,OwnerId,Ownership,ParentId,Phone,Rating,RecordTypeId,ShippingCity,ShippingCountry,ShippingPostalCode,ShippingState,ShippingStreet,Sic,SicDesc,Site,TickerSymbol,Type,Website FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDateB']] ORDER BY LastModifiedDate ASC LIMIT 200"></sfdc:query>
+		</poll>
+        <set-variable variableName="sourceSystem" value="B" doc:name="set B as source system" />
+        <batch:execute name="syncBatch" doc:name="trigger batch execution"/>
+    </flow>
 
 </mule>
