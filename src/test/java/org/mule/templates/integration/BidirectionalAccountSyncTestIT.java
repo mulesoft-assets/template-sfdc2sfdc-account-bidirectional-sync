@@ -36,15 +36,16 @@ import com.sforce.soap.partner.SaveResult;
 @SuppressWarnings("unchecked")
 public class BidirectionalAccountSyncTestIT extends AbstractTemplatesTestCase {
 
-	private static final String POLL_A_BATCH_JOB_NAME = "fromAToBBatch";
-	private static final String POLL_B_BATCH_JOB_NAME = "fromBToABatch";
 	private static final String ANYPOINT_TEMPLATE_NAME = "sfdc2sfdc-bidirectional-account-sync";
+	private static final String A_INBOUND_FLOW_NAME = "triggerSyncFromAFlow";
+	private static final String B_INBOUND_FLOW_NAME = "triggerSyncFromBFlow";
 	private static final int TIMEOUT_MILLIS = 60;
 
 	private static List<String> accountsCreatedInA = new ArrayList<String>();
 	private static List<String> accountsCreatedInB = new ArrayList<String>();
 	private static SubflowInterceptingChainLifecycleWrapper deleteAccountFromAFlow;
 	private static SubflowInterceptingChainLifecycleWrapper deleteAccountFromBFlow;
+	
 
 	private SubflowInterceptingChainLifecycleWrapper createAccountInAFlow;
 	private SubflowInterceptingChainLifecycleWrapper createAccountInBFlow;
@@ -54,6 +55,8 @@ public class BidirectionalAccountSyncTestIT extends AbstractTemplatesTestCase {
 
 	@BeforeClass
 	public static void beforeTestClass() {
+		System.setProperty("page.size", "1000");
+
 		// Set polling frequency to 10 seconds
 		System.setProperty("polling.frequency", "10000");
 
@@ -70,6 +73,8 @@ public class BidirectionalAccountSyncTestIT extends AbstractTemplatesTestCase {
 	public void setUp() throws MuleException {
 		stopAutomaticPollTriggering();
 		getAndInitializeFlows();
+		
+		batchTestHelper = new BatchTestHelper(muleContext);
 	}
 
 	@After
@@ -78,8 +83,8 @@ public class BidirectionalAccountSyncTestIT extends AbstractTemplatesTestCase {
 	}
 
 	private void stopAutomaticPollTriggering() throws MuleException {
-		stopFlowSchedulers(POLL_A_BATCH_JOB_NAME);
-		stopFlowSchedulers(POLL_B_BATCH_JOB_NAME);
+		stopFlowSchedulers(A_INBOUND_FLOW_NAME);
+		stopFlowSchedulers(B_INBOUND_FLOW_NAME);
 	}
 
 	private void getAndInitializeFlows() throws InitialisationException {
@@ -123,7 +128,7 @@ public class BidirectionalAccountSyncTestIT extends AbstractTemplatesTestCase {
 		deleteAccountFromBFlow.process(getTestEvent(idList,
 				MessageExchangePattern.REQUEST_RESPONSE));
 	}
-
+	
 	@Test
 	public void whenUpdatingAnAccountInInstanceBTheBelongingAccountGetsUpdatedInInstanceA()
 			throws MuleException, Exception {
@@ -146,8 +151,7 @@ public class BidirectionalAccountSyncTestIT extends AbstractTemplatesTestCase {
 				updatedAccount.build(), createAccountInBFlow));
 
 		// Execution
-		executeWaitAndAssertBatchJob(POLL_A_BATCH_JOB_NAME);
-		executeWaitAndAssertBatchJob(POLL_B_BATCH_JOB_NAME);
+		executeWaitAndAssertBatchJob(B_INBOUND_FLOW_NAME);
 
 		// Assertions
 		Map<String, String> retrievedAccountFromA = (Map<String, String>) queryAccount(
@@ -160,7 +164,6 @@ public class BidirectionalAccountSyncTestIT extends AbstractTemplatesTestCase {
 		Assert.assertTrue(
 				"Some accounts are not synchronized between systems. "
 						+ differences.toString(), differences.areEqual());
-
 	}
 
 	private Object queryAccount(Map<String, Object> account,
@@ -189,12 +192,12 @@ public class BidirectionalAccountSyncTestIT extends AbstractTemplatesTestCase {
 
 	private void executeWaitAndAssertBatchJob(String flowConstructName)
 			throws Exception {
+
 		// Execute synchronization
 		runSchedulersOnce(flowConstructName);
 
-		// Wait for the batch job executed to finish
-		batchTestHelper = new BatchTestHelper(muleContext);
-		batchTestHelper.awaitJobTermination(TIMEOUT_MILLIS * 10000, 500);
+		// Wait for the batch job execution to finish
+		batchTestHelper.awaitJobTermination(TIMEOUT_MILLIS * 1000, 500);
 		batchTestHelper.assertJobWasSuccessful();
 	}
 
