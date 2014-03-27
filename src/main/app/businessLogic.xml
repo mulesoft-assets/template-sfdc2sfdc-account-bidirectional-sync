@@ -17,14 +17,12 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
         <batch:process-records>
             
             <batch:step name="getAccountInBStep" filter-expression="#['B'.equals(flowVars['sourceSystem'])]">
-                <logger message="FROM #[flowVars['sourceSystem']] GET ACCOUNT B. Payload: #[payload]" level="INFO" doc:name="Logger"/>
                 <enricher source="#[payload]" target="#[recordVars['accountInTargetInstance']]" doc:name="store account">
 	            	<sfdc:query-single config-ref="SalesforceB" query="SELECT Id, Name, LastModifiedDate FROM Account WHERE (Name = '#[payload['Name']]')" doc:name="query account from B"/>
                 </enricher>
             </batch:step>
             
             <batch:step name="upsertAccountInBStep" filter-expression="#[('B'.equals(flowVars['sourceSystem'])) || (recordVars['accountInTargetInstance'] is NullPayload ? false : (recordVars['accountInTargetInstance'].get('LastModifiedDate') &gt;= payload.get('LastModifiedDate')) || ('${sfdc.a.integration.user.id}' == payload.get('LastModifiedById')))]">
-                <logger message="FROM #[flowVars['sourceSystem']] UPSERT B. Payload: #[payload]" level="INFO" doc:name="Logger"/>
 				<expression-component doc:name="prepare account for upsert"><![CDATA[if(!(payload['NumberOfEmployees'] == null)) {
 	payload.put('NumberOfEmployees', Integer.parseInt(payload['NumberOfEmployees']));
 }
@@ -47,14 +45,12 @@ if(recordVars['accountInTargetInstance'] is NullPayload) {
             </batch:step>
             
             <batch:step name="getAccountInAStep" filter-expression="#['A'.equals(flowVars['sourceSystem'])]">
-                <logger message="FROM #[flowVars['sourceSystem']] GET ACCOUNT A. Payload: #[payload]" level="INFO" doc:name="Logger"/>
                 <enricher source="#[payload]" target="#[recordVars['accountInTargetInstance']]" doc:name="store account">
 		            <sfdc:query-single config-ref="SalesforceA" query="SELECT Id, Name, LastModifiedDate FROM Account WHERE (Name = '#[payload['Name']]')" doc:name="query account from A"/>
                 </enricher>
             </batch:step>
             
             <batch:step name="upsertAccountInAStep" filter-expression="#[('A'.equals(flowVars['sourceSystem'])) || (recordVars['accountInTargetInstance'] is NullPayload ? false : (recordVars['accountInTargetInstance'].get('LastModifiedDate') &gt;= payload.get('LastModifiedDate')) || ('${sfdc.b.integration.user.id}' == payload.get('LastModifiedById')))]">
-                <logger message="FROM #[flowVars['sourceSystem']] UPSERT A. Payload: #[payload]" level="INFO" doc:name="Logger"/>
 				<expression-component doc:name="prepare account for upsert"><![CDATA[if(!(payload['NumberOfEmployees'] == null)) {
 	payload.put('NumberOfEmployees', Integer.parseInt(payload['NumberOfEmployees']));
 }
