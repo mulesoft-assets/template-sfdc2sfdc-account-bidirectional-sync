@@ -22,10 +22,12 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
                 </enricher>
             </batch:step>
             
-            <batch:step name="upsertAccountInBStep" accept-expression="'A'.equals(flowVars['sourceSystem']) &amp;&amp; (recordVars['accountInTargetInstance'] is NullPayload || recordVars['accountInTargetInstance'].get('LastModifiedDate') &lt; payload.get('LastModifiedDate') &amp;&amp; '${sfdc.a.integration.user.id}' != payload.get('LastModifiedById'))">
+            <batch:step name="upsertAccountInBStep" accept-expression="'A'.equals(flowVars['sourceSystem']) &amp;&amp; (true || recordVars['accountInTargetInstance'] is NullPayload || recordVars['accountInTargetInstance'].get('LastModifiedDate') &lt; payload.get('LastModifiedDate') &amp;&amp; '${sfdc.a.integration.user.id}' != payload.get('LastModifiedById'))">
 				<expression-component doc:name="prepare account for upsert"><![CDATA[if(!(payload['NumberOfEmployees'] == null)) {
 	payload.put('NumberOfEmployees', Integer.parseInt(payload['NumberOfEmployees']));
 }
+
+payload.remove('OwnerId');
 
 if(recordVars['accountInTargetInstance'] is NullPayload) {
 	payload.remove('Id');
@@ -37,6 +39,7 @@ if(recordVars['accountInTargetInstance'] is NullPayload) {
 	payload.remove('LastModifiedDate');
 }		]]></expression-component>
                 <batch:commit size="200" doc:name="Batch Commit">
+                    <logger message="#[payload]" level="INFO" doc:name="Logger"/>
 			        <sfdc:upsert config-ref="SalesforceB" externalIdFieldName="Id" type="Account" doc:name="upsert account in B">
 			            <sfdc:objects ref="#[payload]"/>
 			        </sfdc:upsert>
@@ -55,6 +58,8 @@ if(recordVars['accountInTargetInstance'] is NullPayload) {
 	payload.put('NumberOfEmployees', Integer.parseInt(payload['NumberOfEmployees']));
 }
 
+payload.remove('OwnerId');
+
 if(recordVars['accountInTargetInstance'] is org.mule.transport.NullPayload) {
 	payload.remove('Id');
 	payload.remove('LastModifiedById');
@@ -66,6 +71,7 @@ if(recordVars['accountInTargetInstance'] is org.mule.transport.NullPayload) {
 }
 				]]></expression-component>
                 <batch:commit size="200" doc:name="Batch Commit">
+                    <logger message="#[payload]" level="INFO" doc:name="Logger"/>
 			        <sfdc:upsert config-ref="SalesforceA" externalIdFieldName="Id" type="Account" doc:name="upsert account in A">
 			            <sfdc:objects ref="#[payload]"/>
 			        </sfdc:upsert>
