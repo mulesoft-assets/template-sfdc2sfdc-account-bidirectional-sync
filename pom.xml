@@ -3,10 +3,10 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.mule.templates</groupId>
-	<artifactId>template-sfdc2sfdc-account-bidirectional-sync</artifactId>
+	<artifactId>template-sfdc2sfdc-bidirectional-account-sync</artifactId>
 	<packaging>mule</packaging>
 	<version>1.0.0-SNAPSHOT</version>
-	<name>sfdc2sfdc-bidirectional-account-sync Mule Anypoint Template Project</name>
+	<name>template-sfdc2sfdc-bidirectional-account-sync Mule Template Project</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
