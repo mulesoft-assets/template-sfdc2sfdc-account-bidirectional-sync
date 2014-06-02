@@ -23,6 +23,7 @@ http://www.mulesoft.org/schema/mule/ee/data-mapper http://www.mulesoft.org/schem
         <set-variable variableName="sourceSystem" value="#[message.inboundProperties['source']]" doc:name="set 'sourceSystem' variable"/>
         <object-to-string-transformer doc:name="transform inputStream to String"/>
         <data-mapper:transform config-ref="XML_To_Account" doc:name="XML To Account"/>
+        <logger message="3333  #[message.inboundProperties['source']]    #[payload] " level="INFO" doc:name="Logger"/>
         <foreach doc:name="For Each Account">
             <expression-component doc:name="transform LastModifiedDate Calendar to String"><![CDATA[import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -49,7 +50,7 @@ payload.put("LastModifiedDate", date+"Z");]]></expression-component>
         <http:response-builder status="200" contentType="application/xml" doc:name="Build HTTP response"/>
     </flow>
 
-    <flow name="triggerSyncFromAFlow" doc:name="triggerSyncFromAFlow" processingStrategy="synchronous" initialState="started">
+    <flow name="triggerSyncFromAFlow" doc:name="triggerSyncFromAFlow" processingStrategy="synchronous" initialState="stopped">
 		<poll doc:name="Poll">
 			<fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="10000" />
 			<watermark variable="lastQueryDateA" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]" />
@@ -60,7 +61,7 @@ payload.put("LastModifiedDate", date+"Z");]]></expression-component>
         <batch:execute name="syncBatch" doc:name="trigger batch execution"/>
     </flow>
     
-	<flow name="triggerSyncFromBFlow" doc:name="triggerSyncFromBFlow" processingStrategy="synchronous" initialState="started">
+	<flow name="triggerSyncFromBFlow" doc:name="triggerSyncFromBFlow" processingStrategy="synchronous" initialState="stopped">
    		<poll doc:name="Poll">
 			<fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="10000" />
 			<watermark variable="lastQueryDateB" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]" />
