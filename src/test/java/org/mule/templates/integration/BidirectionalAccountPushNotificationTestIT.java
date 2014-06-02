@@ -141,7 +141,8 @@ public class BidirectionalAccountPushNotificationTestIT extends AbstractTemplate
 			throws MuleException, Exception {
 
 		// Execution
-		MuleMessage message = new DefaultMuleMessage(buildRequest(), muleContext);
+		String accountName = buildUniqueName();
+		MuleMessage message = new DefaultMuleMessage(buildRequest(accountName), muleContext);
 		MuleEvent testEvent = getTestEvent(message, MessageExchangePattern.REQUEST_RESPONSE);
 		testEvent.setFlowVariable("sourceSystem", "A");
 		triggerPushFlow.process(testEvent);
@@ -151,12 +152,16 @@ public class BidirectionalAccountPushNotificationTestIT extends AbstractTemplate
 
 		// Assertions
 		HashMap<String, Object> account = new HashMap<String, Object>();
-		account.put("Name", "Account bbbb");
+		account.put("Name", accountName);
 		Map<String, String> retrievedAccountFromB = (Map<String, String>) queryAccount(
 				account, queryAccountFromBFlow);
+		System.err.println(retrievedAccountFromB);
 
 		Assert.assertNotNull(retrievedAccountFromB);
 		Assert.assertEquals("Account Names should be equals", account.get("Name"), retrievedAccountFromB.get("Name"));
+		
+		// delete previously created account in B
+		accountsCreatedInB.add(retrievedAccountFromB.get("Id"));
 	}
 
 	private Object queryAccount(Map<String, Object> account,
@@ -169,32 +174,8 @@ public class BidirectionalAccountPushNotificationTestIT extends AbstractTemplate
 				.getMessage().getPayload();
 	}
 
-	private String createTestAccountsInSfdcSandbox(Map<String, Object> account,
-			InterceptingChainLifecycleWrapper createAccountFlow)
-			throws MuleException, Exception {
-		List<Map<String, Object>> salesforceAccounts = new ArrayList<Map<String, Object>>();
-		salesforceAccounts.add(account);
 
-		final List<SaveResult> payloadAfterExecution = (List<SaveResult>) createAccountFlow
-				.process(
-						getTestEvent(salesforceAccounts,
-								MessageExchangePattern.REQUEST_RESPONSE))
-				.getMessage().getPayload();
-		return payloadAfterExecution.get(0).getId();
-	}
-
-	private void executeWaitAndAssertBatchJob(String flowConstructName)
-			throws Exception {
-
-		// Execute synchronization
-		runSchedulersOnce(flowConstructName);
-
-		// Wait for the batch job execution to finish
-		batchTestHelper.awaitJobTermination(TIMEOUT_MILLIS * 1000, 500);
-		batchTestHelper.assertJobWasSuccessful();
-	}
-
-	private String buildRequest(){
+	private String buildRequest(String accountName){
 		String req = "";
 		req += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 		req += "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">";
@@ -227,7 +208,7 @@ public class BidirectionalAccountPushNotificationTestIT extends AbstractTemplate
 		req += "     <sf:LastModifiedDate>2014-06-02T13:00:00.000Z</sf:LastModifiedDate>";
 		req += "     <sf:LastReferencedDate>2014-05-19T11:02:14.000Z</sf:LastReferencedDate>";
 		req += "     <sf:LastViewedDate>2014-05-19T11:02:14.000Z</sf:LastViewedDate>";
-		req += "     <sf:Name>Account bbbb</sf:Name>";
+		req += "     <sf:Name>"+accountName+"</sf:Name>";
 		req += "     <sf:NumberOfEmployees>5000</sf:NumberOfEmployees>";
 		req += "     <sf:OwnerId>005d0000000yYC7AAM</sf:OwnerId>";
 		req += "     <sf:Ownership>Public</sf:Ownership>";
@@ -250,5 +231,9 @@ public class BidirectionalAccountPushNotificationTestIT extends AbstractTemplate
 		req += " </soapenv:Body>";
 		req += "</soapenv:Envelope>";
 		return req;
+	}
+	
+	private String buildUniqueName() {
+		return ANYPOINT_TEMPLATE_NAME + "-" + System.currentTimeMillis() + "Account";
 	}
 }
