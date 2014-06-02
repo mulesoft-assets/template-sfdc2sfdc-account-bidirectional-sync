@@ -14,6 +14,9 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
     
     <batch:job name="syncBatch" >
         <batch:threading-profile poolExhaustedAction="WAIT"/>
+        <batch:input>
+            <logger message="yyyyyyyyyyy" level="INFO" doc:name="Logger"/>
+        </batch:input>
         <batch:process-records>
             
             <batch:step name="getAccountInBStep" accept-expression="'A'.equals(flowVars['sourceSystem'])">
@@ -54,6 +57,7 @@ if(recordVars['accountInTargetInstance'] is NullPayload) {
             </batch:step>
             
             <batch:step name="upsertAccountInAStep" accept-expression="'B'.equals(flowVars['sourceSystem']) &amp;&amp; (recordVars['accountInTargetInstance'] is NullPayload || recordVars['accountInTargetInstance'].get('LastModifiedDate') &lt; payload.get('LastModifiedDate') &amp;&amp; '${sfdc.b.integration.user.id}' != payload.get('LastModifiedById'))">
+                <logger message="333333333333333 #[payload]" level="INFO" doc:name="Logger"/>
 				<expression-component doc:name="prepare account for upsert"><![CDATA[if(!(payload['NumberOfEmployees'] == null)) {
 	payload.put('NumberOfEmployees', Integer.parseInt(payload['NumberOfEmployees']));
 }
@@ -80,6 +84,9 @@ if(recordVars['accountInTargetInstance'] is org.mule.transport.NullPayload) {
             </batch:step>
             
         </batch:process-records>
+        <batch:on-complete>
+            <logger message="xxxxxxxx" level="INFO" doc:name="Logger"/>
+        </batch:on-complete>
     </batch:job>
     
 </mule>
