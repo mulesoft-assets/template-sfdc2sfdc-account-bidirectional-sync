@@ -158,7 +158,10 @@ public class BidirectionalAccountSyncTestIT extends AbstractTemplatesTestCase {
 				account.build(), queryAccountFromAFlow);
 		Map<String, String> retrievedAccountFromB = (Map<String, String>) queryAccount(
 				account.build(), queryAccountFromBFlow);
-
+		
+		retrievedAccountFromA.remove("Id");
+		retrievedAccountFromB.remove("Id");
+		
 		final MapDifference<String, String> differences = Maps.difference(
 				retrievedAccountFromA, retrievedAccountFromB);
 		Assert.assertTrue(
