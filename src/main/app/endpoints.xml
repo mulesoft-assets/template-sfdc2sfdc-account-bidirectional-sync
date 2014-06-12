@@ -20,6 +20,7 @@ http://www.mulesoft.org/schema/mule/ee/data-mapper http://www.mulesoft.org/schem
 	<!-- This is the endponits file. In this file you should declare all your inbound and outbound endpoints, in order to control the access to your integration -->
     <flow name="triggerPushFlow" doc:name="triggerPushFlow" initialState="started">
         <http:inbound-endpoint exchange-pattern="request-response" host="localhost" port="${http.port}" doc:name="HTTP"/>
+        <expression-component doc:name="acquire lock"><![CDATA[app.registry['PollSynchronizer'].lock();]]></expression-component>
         <set-variable variableName="sourceSystem" value="#[message.inboundProperties['source']]" doc:name="set 'sourceSystem' variable"/>
         <object-to-string-transformer doc:name="transform inputStream to String"/>
         <data-mapper:transform config-ref="XML_To_Account" doc:name="XML To Account"/>
@@ -42,35 +43,52 @@ String date = formatter.format(new Date(cal.getTimeInMillis() - calNow.getTimeZo
 // Update LastModifiedDate with computed value
 payload.put("LastModifiedDate", date+"Z");]]></expression-component>
         </foreach>
-        <logger message="3333  #[message.inboundProperties['source']]    #[payload] " level="INFO" doc:name="Logger"/>
+        <choice doc:name="Choice">
+            <when expression="#[flowVars['sourceSystem'] == 'B']">
+                <batch:execute name="fromSalesforceBtoSalesforceABatch" doc:name="trigger from SalesforceB to SalesforceA batch"/>
+            </when>
+            <when expression="#[flowVars['sourceSystem'] == 'A']">
+                <batch:execute name="fromSalesforceAtoSalesforceBBatch" doc:name="trigger from SalesforceA to SalesforceB batch"/>
+            </when>
+        </choice>
 
-
-        <batch:execute name="syncBatch" doc:name="trigger batch execution"/>
 
         <set-payload value="&lt;soapenv:Envelope xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/' xmlns:out='http://soap.sforce.com/2005/09/outbound'&gt;&lt;soapenv:Header/&gt;&lt;soapenv:Body&gt;&lt;out:notificationsResponse&gt;&lt;out:Ack&gt;true&lt;/out:Ack&gt;&lt;/out:notificationsResponse&gt;&lt;/soapenv:Body&gt;&lt;/soapenv:Envelope&gt;" doc:name="Set HTTP response body"/>
         <http:response-builder status="200" contentType="application/xml" doc:name="Build HTTP response"/>
+        <exception-strategy ref="defaultChoiceExceptionStrategy" doc:name="Reference Exception Strategy"/>
     </flow>
 
-    <flow name="triggerSyncFromAFlow" doc:name="triggerSyncFromAFlow" processingStrategy="synchronous" initialState="stopped">
+	<!-- This is the endponits file. In this file you should declare all your inbound and outbound endpoints, in order to control the access to your integration -->
+
+    <flow name="triggerSyncFromAFlow" doc:name="triggerSyncFromAFlow" processingStrategy="synchronous">
 		<poll doc:name="Poll">
 			<fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="10000" />
 			<watermark variable="lastQueryDateA" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]" />
-			<sfdc:query config-ref="SalesforceA" doc:name="fetch accounts from A" query="dsql:SELECT AccountNumber,AccountSource,AnnualRevenue,BillingCity,BillingCountry,BillingPostalCode,BillingState,BillingStreet,Description,Fax,Id,Industry,LastModifiedById,LastModifiedDate,Name,NumberOfEmployees,OwnerId,Ownership,ParentId,Phone,Rating,ShippingCity,ShippingCountry,ShippingPostalCode,ShippingState,ShippingStreet,Sic,SicDesc,Site,TickerSymbol,Type,Website FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDateA']] ORDER BY LastModifiedDate ASC LIMIT 200"></sfdc:query>
+            <processor-chain doc:name="Processor Chain">
+                <expression-component doc:name="acquire lock"><![CDATA[app.registry['PollSynchronizer'].lock();]]></expression-component>
+                <sfdc:query config-ref="SalesforceA" query="dsql:SELECT AccountNumber,AccountSource,AnnualRevenue,BillingCity,BillingCountry,BillingPostalCode,BillingState,BillingStreet,Description,Fax,Id,Industry,LastModifiedById,LastModifiedDate,Name,NumberOfEmployees,OwnerId,Ownership,ParentId,Phone,Rating,ShippingCity,ShippingCountry,ShippingPostalCode,ShippingState,ShippingStreet,Sic,SicDesc,Site,TickerSymbol,Type,Website FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDateA']] ORDER BY LastModifiedDate ASC LIMIT 200" doc:name="fetch accounts from A"/>
+            </processor-chain>
+
 		</poll>
-        <logger message="ssss #[flowVars['lastQueryDateA']] #[payload.size()]" level="INFO" doc:name="Logger"/>
-        <set-variable variableName="sourceSystem" value="A" doc:name="set A as source system" />
-        <batch:execute name="syncBatch" doc:name="trigger batch execution"/>
+
+        <batch:execute name="fromSalesforceAtoSalesforceBBatch" doc:name="trigger batch execution"/>
+        <exception-strategy ref="defaultChoiceExceptionStrategy" doc:name="Reference Exception Strategy"/>
     </flow>
     
-	<flow name="triggerSyncFromBFlow" doc:name="triggerSyncFromBFlow" processingStrategy="synchronous" initialState="stopped">
+	<flow name="triggerSyncFromBFlow" doc:name="triggerSyncFromBFlow" processingStrategy="synchronous">
    		<poll doc:name="Poll">
 			<fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="10000" />
 			<watermark variable="lastQueryDateB" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]" />
-			<sfdc:query config-ref="SalesforceB" doc:name="fetch accounts from B" query="dsql:SELECT AccountNumber,AccountSource,AnnualRevenue,BillingCity,BillingCountry,BillingPostalCode,BillingState,BillingStreet,Description,Fax,Id,Industry,LastModifiedById,LastModifiedDate,Name,NumberOfEmployees,OwnerId,Ownership,ParentId,Phone,Rating,ShippingCity,ShippingCountry,ShippingPostalCode,ShippingState,ShippingStreet,Sic,SicDesc,Site,TickerSymbol,Type,Website FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDateB']] ORDER BY LastModifiedDate ASC LIMIT 200"></sfdc:query>
+            <processor-chain doc:name="Processor Chain">
+                <expression-component doc:name="acquire lock"><![CDATA[app.registry['PollSynchronizer'].lock();]]></expression-component>
+                <sfdc:query config-ref="SalesforceB" query="dsql:SELECT AccountNumber,AccountSource,AnnualRevenue,BillingCity,BillingCountry,BillingPostalCode,BillingState,BillingStreet,Description,Fax,Id,Industry,LastModifiedById,LastModifiedDate,Name,NumberOfEmployees,OwnerId,Ownership,ParentId,Phone,Rating,ShippingCity,ShippingCountry,ShippingPostalCode,ShippingState,ShippingStreet,Sic,SicDesc,Site,TickerSymbol,Type,Website FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDateB']] ORDER BY LastModifiedDate ASC LIMIT 200" doc:name="fetch accounts from B"/>
+            </processor-chain>
+
+
 		</poll>
-        <logger message="ssss #[flowVars['lastQueryDateB']] #[payload.size()]" level="INFO" doc:name="Logger"/>
-        <set-variable variableName="sourceSystem" value="B" doc:name="set B as source system" />
-        <batch:execute name="syncBatch" doc:name="trigger batch execution"/>
+
+        <batch:execute name="fromSalesforceBtoSalesforceABatch" doc:name="trigger batch execution"/>
+        <exception-strategy ref="defaultChoiceExceptionStrategy" doc:name="Reference Exception Strategy"/>
     </flow>
 
 </mule>
