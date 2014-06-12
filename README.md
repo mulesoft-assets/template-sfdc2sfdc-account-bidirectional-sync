@@ -17,41 +17,41 @@
 Note that using this template is subject to the conditions of this [License Agreement](AnypointTemplateLicense.pdf).
 Please review the terms of the license before downloading and using this template. In short, you are allowed to use the template for free with Mule ESB Enterprise Edition, CloudHub, or as a trial in Anypoint Studio.
 
-## Use case <a name="usecase"/>
+# Use Case <a name="usecase"/>
+As a Salesforce admin I want to syncronize accounts between two Salesfoce orgs.
 
-As a Salesforce admin, I want to have my accounts synchronized between two different Salesforce organizations
+This Anypoint Template should serve as a foundation for setting an online sync of accounts from one SalesForce instance to another in manner of push notification. In this template you have option to decide whether to use the traditional Polling trigger flow which will repeatedly poll source Salesforce org for changes and updates or 
+you can decide to use the Push Notification trigger flow which reflects changes in Salesforce source org instantly. Everytime there is a new account or a change in an already existing one, the integration template will receive notification instantly from Salesforce source instance and it will be responsible for updating the account on the target org.
 
-## Template overview <a name="templateoverview"/>
+Requirements have been set not only to be used as examples, but also to establish a starting point to adapt your integration to your requirements.
 
-Let's say we want to keep Salesforce instance *A* synchronized with Salesforce instance *B*. Then, the integration behavior can be summarized just with the following steps:
-
-1. Ask Salesforce *A*:
-> *Which changes have there been since the last time I got in touch with you?*
-
-2. For each of the updates fetched in the previous step (1.), ask Salesforce *B*:
-> *Does the update received from A should be applied?*
-
-3. If Salesforce answer for the previous question (2.) is *Yes*, then *upsert* (create or update depending each particular case) B with the belonging change
-
-4. Repeat previous steps (1. to 3.) the other way around (using *B* as source instance and *A* as the target one)
-
- Repeat *ad infinitum*:
-
-5. Ask Salesforce *A*:
-> *Which changes have there been since the question I've made in the step 1.?*
-
-And so on...
-  
-  
-The question for recent changes since a certain moment in nothing but a [poll inbound][1] with a [watermark][2] defined.
+As implemented, this Anypoint Template leverage the [Batch Module](http://www.mulesoft.org/documentation/display/current/Batch+Processing) and [Outbound messaging](https://www.salesforce.com/us/developer/docs/api/Content/sforce_api_om_outboundmessaging.htm)
+The batch job is divided in Input, Process and On Complete stages. The integration is triggered by http inbound connector defined in the flow that is going to trigger the application and executing the batch job with received message from Salesforce source instance.
+Outbound messaging in Salesforce allows you to specify that changes to fields within Salesforce can cause messages with field values to be sent to designated external servers.
+Outbound messaging is part of the workflow rule functionality in Salesforce. Workflow rules watch for specific kinds of field changes and trigger automatic Salesforce actions in this case sending accounts as an outbound message to Mule Http inbound connector,
+which will then further process this message and creates Account in target Salesforce org.
 
 
-# Run it! <a name="runit"/>
+# Run it!
 
-In order to have the template up and running just complete the two following steps:
+Steps to get Salesforce to Salesforce bi-directional account sync running.
 
- 1. [Configure the application properties](#propertiestobeconfigured)
- 2. Run it! ([on premise](#runonopremise) or [in Cloudhub](#runoncloudhub))
+## Running on premise <a name="runonopremise"/>
+
+Using Outbound messaging in Salesforce levarages on sending SOAP messages to a publicly accessible server. So unless you have public IP address you won't be able to receive Salesforce outbound message. 
+
+## Running on CloudHub <a name="runoncloudhub"/>
+
++ Locate the properties file `mule.dev.properties`, in src/main/resources
++ Complete all the properties required as per the examples in the section [Properties to be configured](#propertiestobeconfigured)
++ Deploy the template on cloudhub [creating your application on CloudHub](http://www.mulesoft.org/documentation/display/current/Hello+World+on+CloudHub) 
++ Once your app is all set and started, you will need to define Salesforce outbound messaging and a simple workflow rule. [This article will show you how to accomplish this](https://www.salesforce.com/us/developer/docs/api/Content/sforce_api_om_outboundmessaging_setting_up.htm)
+The most important setting here is the `Endpoint URL` which needs to point to your application running on Cloudbhub, eg. `http://yourapp.cloudhub.io:80`. Additionaly, try to add just few fields to the `Fields to Send` to keep it simple for begin.
+Once this all is done every time when you will make a change on Account in source Salesforce org. This account will be sent as a SOAP message to the Http endpoint of running application in Cloudhub.
+
+## Properties to be configured (With examples) <a name="propertiestobeconfigured"/>
+
+In order to use this Anypoint Template you need to configure properties (Credentials, configurations, etc.) either in properties file or in CloudHub as Environment Variables. Detail list with examples:
 
 
 ## Properties to be configured<a name="propertiestobeconfigured"/>
@@ -75,18 +75,6 @@ This property is an important one, as it configures what should be the start poi
 + sfdc.b.securityToken `ces56arl7apQs56XTddf34X`
 + sfdc.b.url `https://login.salesforce.com/services/Soap/u/28.0`
 
-
-
-## Running on CloudHub <a name="runoncloudhub"/>
-
-Running the template on CloudHub is as simple as follow the 4 steps detailed on the following documetation page: 
-  
-> [http://www.mulesoft.org/documentation/display/current/Hello+World+on+CloudHub](http://www.mulesoft.org/documentation/display/current/Hello+World+on+CloudHub)
-
-## Running on premise <a name="runonopremise"/>
-Once all properties are filled in one of the template property files (for example in [mule.prod.properties] (https://github.com/mulesoft/sfdc2sfdc-bidirectional-account-sync/blob/master/src/main/resources/mule.prod.properties)) the template can be run by just choosing an enviromet and follow the steps detailed in the link placed below:
-
-> [http://www.mulesoft.org/documentation/display/current/Hello+World+on+CloudHub](http://www.mulesoft.org/documentation/display/current/Deploying+Mule+Applications)
 
 # Customize It!<a name="customizeit"/>
 This brief guide intends to give a high level idea of how this template is built and how you can change it according to your needs.
