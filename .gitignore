@@ -23,7 +23,6 @@ tmp/**/*
 local.properties
 .settings/
 .loadpath
-
 # You may want to remove the sharp symbols here if you are using Maven 
 .project
 .classpath
@@ -44,20 +43,16 @@ local.properties
 # Studio-specific #
 # --------------- #
 .studio/
-/flows/
+./flows/
 target/
 **/*.mflow
-
-# Ignore needed until STUDIO-4317 is closed
-src/main/app/test-flows.xml
 
 # --------------- #
 # Mule-specific #
 # --------------- #
 .mule/
 
-# ------------ #
-# System files #
-# ------------ #
-**.DS_Store
-
+# --------------------------------------- #
+# Test credentials to be use locally only #
+# --------------------------------------- #
+src/test/resources/mule.test.properties
