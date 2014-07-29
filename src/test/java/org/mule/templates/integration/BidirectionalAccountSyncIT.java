@@ -24,12 +24,10 @@ import org.junit.Test;
 import org.mule.MessageExchangePattern;
 import org.mule.api.MuleException;
 import org.mule.api.lifecycle.InitialisationException;
-import org.mule.context.notification.NotificationException;
 import org.mule.processor.chain.InterceptingChainLifecycleWrapper;
 import org.mule.processor.chain.SubflowInterceptingChainLifecycleWrapper;
 import org.mule.templates.AbstractTemplatesTestCase;
 import org.mule.templates.builders.SfdcObjectBuilder;
-import org.mule.templates.test.utils.ListenerProbe;
 
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
@@ -80,7 +78,6 @@ public class BidirectionalAccountSyncIT extends AbstractTemplatesTestCase {
 	@Before
 	public void setUp() throws MuleException {
 		stopAutomaticPollTriggering();
-		registerListeners();
 		getAndInitializeFlows();
 		
 		batchTestHelper = new BatchTestHelper(muleContext);
@@ -91,10 +88,6 @@ public class BidirectionalAccountSyncIT extends AbstractTemplatesTestCase {
 		cleanUpSandboxesByRemovingTestAccounts();
 	}
 
-	private void registerListeners() throws NotificationException {
-		muleContext.registerListener(pipelineListener);
-	}
-	
 	private void stopAutomaticPollTriggering() throws MuleException {
 		stopFlowSchedulers(A_INBOUND_FLOW_NAME);
 		stopFlowSchedulers(B_INBOUND_FLOW_NAME);
@@ -212,15 +205,9 @@ public class BidirectionalAccountSyncIT extends AbstractTemplatesTestCase {
 		// Execute synchronization
 		runSchedulersOnce(flowConstructName);
 
-		waitForPollToRun();
-		
 		// Wait for the batch job execution to finish
 		batchTestHelper.awaitJobTermination(TIMEOUT_MILLIS * 1000, 500);
 		batchTestHelper.assertJobWasSuccessful();
 	}
 
-	private void waitForPollToRun() {
-		pollProber.check(new ListenerProbe(pipelineListener));
-	}
-	
 }
