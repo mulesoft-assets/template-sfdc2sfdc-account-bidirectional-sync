@@ -15,6 +15,9 @@ import org.junit.BeforeClass;
 import org.mule.api.config.MuleProperties;
 import org.mule.construct.Flow;
 import org.mule.tck.junit4.FunctionalTestCase;
+import org.mule.tck.probe.PollingProber;
+import org.mule.tck.probe.Prober;
+import org.mule.templates.test.utils.PipelineSynchronizeListener;
 
 /**
  * This is the base test class for Templates integration tests.
@@ -26,16 +29,10 @@ public abstract class AbstractTemplatesTestCase extends FunctionalTestCase {
 	private static final String MAPPINGS_FOLDER_PATH = "./mappings";
 	private static final String TEST_FLOWS_FOLDER_PATH = "./src/test/resources/flows/";
 	private static final String MULE_DEPLOY_PROPERTIES_PATH = "./src/main/app/mule-deploy.properties";
+	private static final String SYNC_FROM_B_POLL_FLOW_NAME = "triggerSyncFromBFlow";
 
-	@BeforeClass
-	public static void beforeClass() {
-		System.setProperty("mule.env", "test");
-	}
-
-	@AfterClass
-	public static void afterClass() {
-		System.getProperties().remove("mule.env");
-	}
+	protected final Prober pollProber = new PollingProber(60000, 1000l);
+	protected final PipelineSynchronizeListener pipelineListener = new PipelineSynchronizeListener(SYNC_FROM_B_POLL_FLOW_NAME);
 
 	@Override
 	protected String getConfigResources() {
