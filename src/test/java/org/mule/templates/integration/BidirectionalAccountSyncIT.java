@@ -42,7 +42,7 @@ import com.sforce.soap.partner.SaveResult;
 @SuppressWarnings("unchecked")
 public class BidirectionalAccountSyncIT extends AbstractTemplatesTestCase {
 
-	private static final String ANYPOINT_TEMPLATE_NAME = "sfdc2sfdc-bidirectional-account-sync";
+	private static final String ANYPOINT_TEMPLATE_NAME = "sfdc2sfdc-account-bidirectional-sync";
 	private static final String A_INBOUND_FLOW_NAME = "triggerSyncFromAFlow";
 	private static final String B_INBOUND_FLOW_NAME = "triggerSyncFromBFlow";
 	private static final int TIMEOUT_MILLIS = 60;
