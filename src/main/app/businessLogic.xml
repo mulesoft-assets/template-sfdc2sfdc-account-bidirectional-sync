@@ -33,10 +33,11 @@ if(recordVars['accountInTargetInstance'] is NullPayload) {
 }		]]></expression-component>
 
                 <batch:commit size="200" doc:name="Batch Commit">
+                    <logger level="INFO" doc:name="Logger" message="Payload to upload in Salesforce A: #[payload]"/>
                     <sfdc:upsert config-ref="SalesforceA" externalIdFieldName="Id" type="Account" doc:name="Salesforce">
                         <sfdc:objects ref="#[payload]"/>
                     </sfdc:upsert>
-                    <logger level="INFO" doc:name="Logger" message="Upsert Salesforce response: #[payload]"/>
+                    <logger level="INFO" doc:name="Logger" message="Upsert in Salesforce instance A response: #[payload]"/>
                 </batch:commit>
             </batch:step>
         </batch:process-records>
@@ -73,7 +74,7 @@ if(recordVars['accountInTargetInstance'] is NullPayload) {
                     <sfdc:upsert config-ref="SalesforceB" externalIdFieldName="Id" type="Account" doc:name="Salesforce">
                         <sfdc:objects ref="#[payload]"/>
                     </sfdc:upsert>
-                    <logger message="Upsert Salesforce response: #[payload]" level="INFO" doc:name="Logger"/>
+                    <logger message="Upsert in Salesforce instance B response: #[payload]" level="INFO" doc:name="Logger"/>
                 </batch:commit>
             </batch:step>
         </batch:process-records>
