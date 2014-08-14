@@ -153,6 +153,10 @@ public class BidirectionalAccountSyncIT extends AbstractTemplatesTestCase {
 		// cleaning up
 		accountsCreatedInA.add(createTestAccountsInSfdcSandbox(
 				justCreatedAccount.build(), createAccountInAFlow));
+
+        // make a creation time gap between two accounts
+        Thread.sleep(5000);
+
 		accountsCreatedInB.add(createTestAccountsInSfdcSandbox(
 				updatedAccount.build(), createAccountInBFlow));
 
