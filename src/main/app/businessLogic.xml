@@ -15,7 +15,7 @@ http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfd
                     <enrich source="payload" target="recordVars['accountInTargetInstance']"/>
                 </enricher>
             </batch:step>
-            <batch:step name="forEachAccountToBeUpsertedInSalesforceB" accept-expression="recordVars['accountInTargetInstance'] is NullPayload ? true : ((org.mule.templates.date.DateUtils.ISOStringDateToDateTime(payload['LastModifiedDate']).isAfter(org.mule.templates.date.DateUtils.ISOStringDateToDateTime(recordVars['accountInTargetInstance']['LastModifiedDate'])) || org.mule.templates.date.DateUtils.ISOStringDateToDateTime(payload['LastModifiedDate']).isEqual(org.mule.templates.date.DateUtils.ISOStringDateToDateTime(recordVars['accountInTargetInstance']['LastModifiedDate']))  ) &amp;&amp; ('${sfdc.b.integration.user.id}' != payload.get('LastModifiedById')))">
+            <batch:step name="forEachAccountToBeUpsertedInSalesforceB" accept-expression="recordVars['accountInTargetInstance'] is NullPayload ? true : ((org.mule.templates.date.DateUtils.ISOStringDateToDateTime(payload['LastModifiedDate']).isAfter(org.mule.templates.date.DateUtils.ISOStringDateToDateTime(recordVars['accountInTargetInstance']['LastModifiedDate']))) &amp;&amp; ('${sfdc.b.integration.user.id}' != payload.get('LastModifiedById')))">
                 <expression-component doc:name="prepare account for upsert"><![CDATA[if(!(payload['NumberOfEmployees'] == null)) {
 	payload.put('NumberOfEmployees', Integer.parseInt(payload['NumberOfEmployees']));
 }
