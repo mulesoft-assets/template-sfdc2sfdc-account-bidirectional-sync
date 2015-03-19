@@ -28,6 +28,7 @@ import org.mule.api.MuleEvent;
 import org.mule.api.MuleException;
 import org.mule.api.MuleMessage;
 import org.mule.api.lifecycle.InitialisationException;
+import org.mule.api.transport.PropertyScope;
 import org.mule.construct.Flow;
 import org.mule.processor.chain.InterceptingChainLifecycleWrapper;
 import org.mule.processor.chain.SubflowInterceptingChainLifecycleWrapper;
@@ -50,6 +51,7 @@ public class BidirectionalAccountPushNotificationIT extends AbstractTemplatesTes
 	private static final String ANYPOINT_TEMPLATE_NAME = "sfdc2sfdc-bidirectional-account-sync";
 	private static final String A_INBOUND_FLOW_NAME = "triggerSyncFromAFlow";
 	private static final String B_INBOUND_FLOW_NAME = "triggerSyncFromBFlow";
+	private static final String SOURCE_SYSTEM = "A";
 	private static final int TIMEOUT_MILLIS = 60;
 
 	private static List<String> accountsCreatedInA = new ArrayList<String>();
@@ -149,8 +151,9 @@ public class BidirectionalAccountPushNotificationIT extends AbstractTemplatesTes
 		// Execution
 		String accountName = buildUniqueName();
 		MuleMessage message = new DefaultMuleMessage(buildRequest(accountName), muleContext);
+		message.setProperty("source", SOURCE_SYSTEM, PropertyScope.INBOUND);
 		MuleEvent testEvent = getTestEvent(message, MessageExchangePattern.REQUEST_RESPONSE);
-		testEvent.setFlowVariable("sourceSystem", "A");
+		
 		triggerPushFlow.process(testEvent);
 		
 		batchTestHelper.awaitJobTermination(TIMEOUT_MILLIS * 1000, 500);
