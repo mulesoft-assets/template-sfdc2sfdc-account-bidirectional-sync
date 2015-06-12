@@ -20,7 +20,7 @@ http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfd
 	payload.put('NumberOfEmployees', Integer.parseInt(payload['NumberOfEmployees']));
 }
 
-if(recordVars['accountInTargetInstance'] is NullPayload) {
+if(recordVars['accountInTargetInstance'] == null) {
 	payload.remove('Id');
 	payload.remove('LastModifiedById');
 	payload.remove('LastModifiedDate');
@@ -59,7 +59,7 @@ if(recordVars['accountInTargetInstance'] is NullPayload) {
 	payload.put('NumberOfEmployees', Integer.parseInt(payload['NumberOfEmployees']));
 }
 
-if(recordVars['accountInTargetInstance'] is NullPayload) {
+if(recordVars['accountInTargetInstance'] == null) {
 	payload.remove('Id');
 	payload.remove('LastModifiedById');
 	payload.remove('LastModifiedDate');
