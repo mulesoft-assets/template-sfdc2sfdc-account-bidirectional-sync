@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:data-mapper="http://www.mulesoft.org/schema/mule/ee/data-mapper" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"  xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
 	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
 	xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc" xmlns:http="http://www.mulesoft.org/schema/mule/http"
 	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.6.1"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.7.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
 http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
@@ -12,9 +12,8 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
-http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
-http://www.mulesoft.org/schema/mule/ee/data-mapper http://www.mulesoft.org/schema/mule/ee/data-mapper/current/mule-data-mapper.xsd">
-    <data-mapper:config name="XML_To_Account" transformationGraphPath="xml_to_account.grf" doc:name="DataMapper"/>
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+
     <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="${http.port}" doc:name="HTTP Listener Configuration"/>
 
 
@@ -25,26 +24,35 @@ http://www.mulesoft.org/schema/mule/ee/data-mapper http://www.mulesoft.org/schem
         <expression-component doc:name="acquire lock"><![CDATA[app.registry['PollSynchronizer'].lock();]]></expression-component>
         <set-variable variableName="sourceSystem" value="#[message.inboundProperties['source']]" doc:name="set 'sourceSystem' variable"/>
         <object-to-string-transformer doc:name="transform inputStream to String"/>
-        <data-mapper:transform config-ref="XML_To_Account" doc:name="XML To Account"/>
+        <dw:transform-message doc:name="XML To Account">
+            <dw:set-payload><![CDATA[%dw 1.0
+%input payload application/xml
+%output application/java
+---
+payload.Envelope.Body.notifications.*Notification map
+{
+Id: $.Id,
+Description: $.sObject.Description,
+ShippingStreet: $.sObject.ShippingStreet,
+Site: $.sObject.Site,
+Type: $.sObject.Type,
+Website: $.sObject.Website,
+Industry: $.sObject.Industry,
+Name: $.sObject.Name,
+NumberOfEmployees: $.sObject.NumberOfEmployees,
+ShippingCity: $.sObject.ShippingCity,
+ShippingCountry: $.sObject.ShippingCountry,
+ShippingPostalCode: $.sObject.ShippingPostalCode,
+ShippingState: $.sObject.ShippingState,
+BillingCity: $.sObject.BillingCity,
+BillingCountry: $.sObject.BillingCountry,
+BillingPostalCode: $.sObject.BillingPostalCode,
+BillingState: $.sObject.BillingState,
+BillingStreet: $.sObject.BillingStreet,
+LastModifiedDate: $.sObject.LastModifiedDate
+}]]></dw:set-payload>
+        </dw:transform-message>
 
-        <foreach doc:name="For Each Account">
-            <expression-component doc:name="transform LastModifiedDate Calendar to String"><![CDATA[import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Calendar;
-
-// Calculate current timezone offset 
-Calendar calNow = Calendar.getInstance();
-calNow.setTimeInMillis(System.currentTimeMillis());
-
-// Format LastModifiedDate to Salesforce specific format
-SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
-
-Calendar cal = payload.LastModifiedDate;
-String date = formatter.format(new Date(cal.getTimeInMillis() - calNow.getTimeZone().getOffset(System.currentTimeMillis()) ));
-
-// Update LastModifiedDate with computed value
-payload.put("LastModifiedDate", date+"Z");]]></expression-component>
-        </foreach>
         <choice doc:name="Choice">
             <when expression="#[flowVars['sourceSystem'] == 'B']">
                 <batch:execute name="fromSalesforceBtoSalesforceABatch" doc:name="trigger from SalesforceB to SalesforceA batch"/>
