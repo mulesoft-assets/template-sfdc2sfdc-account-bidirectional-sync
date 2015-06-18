@@ -1,44 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.7.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.7.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
-http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd">
-    
+http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
 
+    
      <batch:job name="fromSalesforceBtoSalesforceABatch" max-failed-records="1">
         <batch:threading-profile poolExhaustedAction="WAIT"/>
         <batch:process-records>
-            <batch:step name="forEachAccountInSalesforceAGetAccountFromSalesforceBStep">
-                <enricher doc:name="store Salesforce account in var 'accountInTargetInstance'" >
-                    <sfdc:query-single config-ref="SalesforceA" query="SELECT Id, Name, LastModifiedDate FROM Account WHERE (Name = '#[payload['Name']]')" doc:name="Salesforce"/>
-                    <enrich source="payload" target="recordVars['accountInTargetInstance']"/>
+            <batch:step name="forEachAccountInSalesforceBGetAccountFromSalesforceAStep">
+                <enricher doc:name="set Id and LastModifiedDate from matching account"  >
+                    <sfdc:query-single config-ref="SalesforceA" query="SELECT Id, LastModifiedDate FROM Account WHERE (Name = '#[payload['Name']]')" doc:name="query Account in Salesforce Instance A"/>
+                    <enrich source="payload == null ? null : payload.Id" target="payload.Id"/>
+                    <enrich source="payload == null ? null : payload.LastModifiedDate" target="payload.LastModifiedDateA"/>
                 </enricher>
             </batch:step>
-            <batch:step name="forEachAccountToBeUpsertedInSalesforceB" accept-expression="recordVars['accountInTargetInstance'] == null ? true : ((org.mule.templates.date.DateUtils.ISOStringDateToDateTime(payload['LastModifiedDate']).isAfter(org.mule.templates.date.DateUtils.ISOStringDateToDateTime(recordVars['accountInTargetInstance']['LastModifiedDate']))) &amp;&amp; ('${sfdc.b.integration.user.id}' != payload.get('LastModifiedById')))">
-                <expression-component doc:name="prepare account for upsert"><![CDATA[if(!(payload['NumberOfEmployees'] == null)) {
-	payload.put('NumberOfEmployees', Integer.parseInt(payload['NumberOfEmployees']));
-}
 
-if(recordVars['accountInTargetInstance'] == null) {
-	payload.remove('Id');
-	payload.remove('LastModifiedById');
-	payload.remove('LastModifiedDate');
-	payload.remove('OwnerId');
-} else {
-	payload.put('Id',recordVars['accountInTargetInstance'].get('Id'));
-	payload.remove('LastModifiedById');
-	payload.remove('LastModifiedDate');
-	payload.remove('OwnerId');
-}		]]></expression-component>
+            <batch:step name="forEachAccountToBeUpsertedInSalesforceA" accept-expression="payload.Id == null ? true : (payload.LastModifiedDateA &lt; payload.LastModifiedDate)">
 
                 <batch:commit size="200" doc:name="Batch Commit">
-                    <logger level="INFO" doc:name="Logger" message="Payload to upload in Salesforce A: #[payload]"/>
-                    <sfdc:upsert config-ref="SalesforceA" externalIdFieldName="Id" type="Account" doc:name="Salesforce">
+                    <dw:transform-message doc:name="map Salesforce Accounts">
+                        <dw:set-payload><![CDATA[%dw 1.0
+%input payload application/java
+%output application/java
+---
+payload map {
+	AccountNumber: $.AccountNumber,
+	Description : $.Description,
+	Id: $.Id,
+	Name: $.Name,
+	(NumberOfEmployees : $.NumberOfEmployees as :number) when ($.NumberOfEmployees != null),
+	Industry: $.Industry,
+	ShippingStreet: $.ShippingStreet,
+	Site: $.Site,
+	Type: $.Type,
+	Website: $.Website,
+	ShippingCity: $.ShippingCity,
+	ShippingCountry: $.ShippingCountry,
+	ShippingPostalCode: $.ShippingPostalCode,
+	ShippingState: $.ShippingState,
+	BillingCity: $.BillingCity,
+	BillingCountry: $.BillingCountry,
+	BillingPostalCode: $.BillingPostalCode,
+	BillingState: $.BillingState
+}]]></dw:set-payload>
+                    </dw:transform-message>
+                    <sfdc:upsert config-ref="SalesforceA" externalIdFieldName="Id" type="Account" doc:name="upsert Accounts in Salesforce Instance A">
                         <sfdc:objects ref="#[payload]"/>
                     </sfdc:upsert>
-                    <logger level="INFO" doc:name="Logger" message="Upsert in Salesforce instance A response: #[payload]"/>
-                </batch:commit>
+                    <logger message="Upsert in Salesforce instance A response: #[payload]" level="INFO" doc:name="Logger"/>
+				</batch:commit>
+
             </batch:step>
         </batch:process-records>
         <batch:on-complete>
@@ -48,34 +62,46 @@ if(recordVars['accountInTargetInstance'] == null) {
     <batch:job name="fromSalesforceAtoSalesforceBBatch" max-failed-records="1">
         <batch:threading-profile poolExhaustedAction="WAIT"/>
         <batch:process-records>
-            <batch:step name="forEachAccountInSalesforceBGetAccountFromSalesforceAStep">
-                <enricher doc:name="store Salesforce account in var 'accountInTargetInstance'">
-                    <sfdc:query-single config-ref="SalesforceB" query="SELECT Id, Name, LastModifiedDate FROM Account WHERE (Name = '#[payload['Name']]')" doc:name="Salesforce"/>
-                    <enrich source="payload" target="recordVars['accountInTargetInstance']"/>
+            <batch:step name="forEachAccountInSalesforceAGetAccountFromSalesforceBStep">
+                <enricher doc:name="set Id and LastModifiedDate from matching account"  >
+                    <sfdc:query-single config-ref="SalesforceB" query="SELECT Id, LastModifiedDate FROM Account WHERE (Name = '#[payload['Name']]')" doc:name="query Account in Salesforce Instance B"/>
+					<enrich source="payload == null ? null : payload.Id" target="payload.Id"/>
+                    <enrich source="payload == null ? null : payload.LastModifiedDate" target="payload.LastModifiedDateB"/>
                 </enricher>
             </batch:step>
-            <batch:step name="forEachAccountToBeUpsertedInSalesforceA" accept-expression="recordVars['accountInTargetInstance'] ==null ? true : ((org.mule.templates.date.DateUtils.ISOStringDateToDateTime(payload['LastModifiedDate']).isAfter(org.mule.templates.date.DateUtils.ISOStringDateToDateTime(recordVars['accountInTargetInstance']['LastModifiedDate']))) &amp;&amp; ('${sfdc.a.integration.user.id}' != payload.get('LastModifiedById')))">
-                <expression-component doc:name="prepare account for upsert"><![CDATA[if(!(payload['NumberOfEmployees'] == null)) {
-	payload.put('NumberOfEmployees', Integer.parseInt(payload['NumberOfEmployees']));
-}
-
-if(recordVars['accountInTargetInstance'] == null) {
-	payload.remove('Id');
-	payload.remove('LastModifiedById');
-	payload.remove('LastModifiedDate');
-	payload.remove('OwnerId');
-} else {
-	payload.put('Id',recordVars['accountInTargetInstance'].get('Id'));
-	payload.remove('LastModifiedById');
-	payload.remove('LastModifiedDate');
-	payload.remove('OwnerId');
-}		]]></expression-component>
-                <batch:commit doc:name="Batch Commit" size="200">
-                    <sfdc:upsert config-ref="SalesforceB" externalIdFieldName="Id" type="Account" doc:name="Salesforce">
+            <batch:step name="forEachAccountToBeUpsertedInSalesforceB" accept-expression="payload.Id == null  ? true : (payload.LastModifiedDateB &lt; payload.LastModifiedDate)">
+<batch:commit size="200" doc:name="Batch Commit">
+                    <dw:transform-message doc:name="map Salesforce Accounts">
+                        <dw:set-payload><![CDATA[%dw 1.0
+%input payload application/java
+%output application/java
+---
+payload map {
+	AccountNumber: $.AccountNumber,
+	Description : $.Description,
+	Id: $.Id,
+	Name: $.Name,
+	(NumberOfEmployees : $.NumberOfEmployees as :number) when ($.NumberOfEmployees != null),
+	Industry: $.Industry,
+	ShippingStreet: $.ShippingStreet,
+	Site: $.Site,
+	Type: $.Type,
+	Website: $.Website,
+	ShippingCity: $.ShippingCity,
+	ShippingCountry: $.ShippingCountry,
+	ShippingPostalCode: $.ShippingPostalCode,
+	ShippingState: $.ShippingState,
+	BillingCity: $.BillingCity,
+	BillingCountry: $.BillingCountry,
+	BillingPostalCode: $.BillingPostalCode,
+	BillingState: $.BillingState
+}]]></dw:set-payload>
+                    </dw:transform-message>
+                    <sfdc:upsert config-ref="SalesforceB" externalIdFieldName="Id" type="Account" doc:name="upsert Accounts in Salesforce Instance B">
                         <sfdc:objects ref="#[payload]"/>
                     </sfdc:upsert>
                     <logger message="Upsert in Salesforce instance B response: #[payload]" level="INFO" doc:name="Logger"/>
-                </batch:commit>
+				</batch:commit>
             </batch:step>
         </batch:process-records>
         <batch:on-complete>

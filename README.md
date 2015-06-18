@@ -158,11 +158,14 @@ Mule Studio provides you with really easy way to deploy your Template directly t
 In order to use this Mule Anypoint Template you need to configure properties (Credentials, configurations, etc.) either in properties file or in CloudHub as Environment Variables. Detail list with examples:
 ### Application configuration
 **Application configuration**
++ http.port `9090`
 + polling.frequency `10000`  
 This are the miliseconds (also different time units can be used) that will run between two different checks for updates in Salesforce
 
 + watermark.default.expression `2014-02-25T11:00:00.000Z`  
 This property is an important one, as it configures what should be the start point of the synchronization.The date format accepted in SFDC Query Language is either *YYYY-MM-DDThh:mm:ss+hh:mm* or you can use Constants. [More information about Dates in SFDC](http://www.salesforce.com/us/developer/docs/officetoolkit/Content/sforce_api_calls_soql_select_dateformats.htm)
+
++ page.size `200`
 
 **SalesForce Connector configuration for company A**
 + sfdc.a.username `jorge.drexler@mail.com`
