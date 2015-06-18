@@ -6,8 +6,6 @@
 
 package org.mule.templates.integration;
 
-import static org.mule.templates.builders.SfdcObjectBuilder.anAccount;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,12 +31,7 @@ import org.mule.construct.Flow;
 import org.mule.processor.chain.InterceptingChainLifecycleWrapper;
 import org.mule.processor.chain.SubflowInterceptingChainLifecycleWrapper;
 import org.mule.templates.AbstractTemplatesTestCase;
-import org.mule.templates.builders.SfdcObjectBuilder;
-
-import com.google.common.collect.MapDifference;
-import com.google.common.collect.Maps;
 import com.mulesoft.module.batch.BatchTestHelper;
-import com.sforce.soap.partner.SaveResult;
 
 /**
  * The objective of this class is validating the correct behavior of the flows
