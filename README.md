@@ -171,15 +171,15 @@ This property is an important one, as it configures what should be the start poi
 + sfdc.a.username `jorge.drexler@mail.com`
 + sfdc.a.password `Noctiluca123`
 + sfdc.a.securityToken `avsfwCUl7apQs56Xq2AKi3X`
-+ sfdc.a.url `https://login.salesforce.com/services/Soap/u/28.0`
-+ sfdc.a.integration.user.id= `A0ed000BO9T`  
++ sfdc.a.url `https://login.salesforce.com/services/Soap/u/32.0`
++ sfdc.a.integration.user.id `A0ed000BO9T`  
 
 **SalesForce Connector configuration for company B**
 + sfdc.b.username `mariano.cozzi@mail.com`
 + sfdc.b.password `LaRanitaDeLaBicicleta456`
 + sfdc.b.securityToken `ces56arl7apQs56XTddf34X`
-+ sfdc.b.url `https://login.salesforce.com/services/Soap/u/28.0`
-+ sfdc.b.integration.user.id= `B0ed000BO9T`
++ sfdc.b.url `https://login.salesforce.com/services/Soap/u/32.0`
++ sfdc.b.integration.user.id `B0ed000BO9T`
 
 # API Calls <a name="apicalls"/>
 Salesforce imposes limits on the number of API Calls that can be made. Therefore calculating this amount may be an important factor to consider. The template calls to the API can be calculated using the formula:
