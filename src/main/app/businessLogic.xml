@@ -23,7 +23,6 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
                 <batch:commit size="200" doc:name="Batch Commit">
                     <dw:transform-message doc:name="map Salesforce Accounts">
                         <dw:set-payload><![CDATA[%dw 1.0
-%input payload application/java
 %output application/java
 ---
 payload map {

@@ -6,10 +6,12 @@
 
 package org.mule.templates.integration;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.activation.DataHandler;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -22,12 +24,15 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mule.DefaultMuleMessage;
 import org.mule.MessageExchangePattern;
+import org.mule.api.MuleContext;
 import org.mule.api.MuleEvent;
 import org.mule.api.MuleException;
 import org.mule.api.MuleMessage;
+import org.mule.api.transformer.DataType;
 import org.mule.api.lifecycle.InitialisationException;
 import org.mule.api.transport.PropertyScope;
 import org.mule.construct.Flow;
+import org.mule.transformer.types.DataTypeFactory;
 import org.mule.processor.chain.InterceptingChainLifecycleWrapper;
 import org.mule.processor.chain.SubflowInterceptingChainLifecycleWrapper;
 import org.mule.templates.AbstractTemplatesTestCase;
@@ -143,9 +148,9 @@ public class BidirectionalAccountPushNotificationIT extends AbstractTemplatesTes
 
 		// Execution
 		String accountName = buildUniqueName();
-		MuleMessage message = new DefaultMuleMessage(buildRequest(accountName), muleContext);
-		message.setProperty("source", SOURCE_SYSTEM, PropertyScope.INBOUND);
-		MuleEvent testEvent = getTestEvent(message, MessageExchangePattern.REQUEST_RESPONSE);
+		final MuleEvent testEvent = getTestEvent(null, triggerPushFlow);
+		testEvent.getMessage().setPayload(buildRequest(accountName), DataTypeFactory.create(InputStream.class, "application/xml")); 
+		testEvent.getMessage().setProperty("source", SOURCE_SYSTEM, PropertyScope.INBOUND);
 		
 		triggerPushFlow.process(testEvent);
 		
