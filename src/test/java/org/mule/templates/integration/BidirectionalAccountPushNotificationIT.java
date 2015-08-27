@@ -51,7 +51,7 @@ public class BidirectionalAccountPushNotificationIT extends AbstractTemplatesTes
 	private static final String ANYPOINT_TEMPLATE_NAME = "sfdc2sfdc-bidirectional-account-sync";
 	private static final String A_INBOUND_FLOW_NAME = "triggerSyncFromAFlow";
 	private static final String B_INBOUND_FLOW_NAME = "triggerSyncFromBFlow";
-	private static final String SOURCE_SYSTEM = "A";
+	private static final Map<String,String> HTTP_QUERY_PARAMS_MAP = new HashMap<String,String>(){{ put("source", "A"); }};
 	private static final int TIMEOUT_MILLIS = 60;
 
 	private static List<String> accountsCreatedInA = new ArrayList<String>();
@@ -151,7 +151,8 @@ public class BidirectionalAccountPushNotificationIT extends AbstractTemplatesTes
 		// Execution
 		String accountName = buildUniqueName();
 		MuleMessage message = new DefaultMuleMessage(buildRequest(accountName), muleContext);
-		message.setProperty("source", SOURCE_SYSTEM, PropertyScope.INBOUND);
+		
+		message.setProperty("http.query.params", HTTP_QUERY_PARAMS_MAP, PropertyScope.INBOUND);
 		MuleEvent testEvent = getTestEvent(message, MessageExchangePattern.REQUEST_RESPONSE);
 		
 		triggerPushFlow.process(testEvent);

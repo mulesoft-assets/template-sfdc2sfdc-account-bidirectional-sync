@@ -23,7 +23,7 @@ http://www.mulesoft.org/schema/mule/ee/data-mapper http://www.mulesoft.org/schem
         <http:listener config-ref="HTTP_Listener_Configuration" path="/" doc:name="HTTP"/>
 
         <expression-component doc:name="acquire lock"><![CDATA[app.registry['PollSynchronizer'].lock();]]></expression-component>
-        <set-variable variableName="sourceSystem" value="#[message.inboundProperties['source']]" doc:name="set 'sourceSystem' variable"/>
+        <set-variable variableName="sourceSystem" value="#[message.inboundProperties.'http.query.params'.get('source')]" doc:name="set 'sourceSystem' variable"/>
         <object-to-string-transformer doc:name="transform inputStream to String"/>
         <data-mapper:transform config-ref="XML_To_Account" doc:name="XML To Account"/>
 
