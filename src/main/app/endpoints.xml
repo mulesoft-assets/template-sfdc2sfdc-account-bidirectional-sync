@@ -22,7 +22,7 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
         <http:listener config-ref="HTTP_Listener_Configuration" path="/" doc:name="HTTP"/>
 
         <expression-component doc:name="acquire lock"><![CDATA[app.registry['PollSynchronizer'].lock();]]></expression-component>
-        <set-variable variableName="sourceSystem" value="#[message.inboundProperties['source']]" doc:name="set 'sourceSystem' variable"/>
+        <set-variable variableName="sourceSystem" value="#[message.inboundProperties.'http.query.params'.get('source')]" doc:name="set 'sourceSystem' variable"/>
         <dw:transform-message doc:name="XML To Account">
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/java

@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.activation.DataHandler;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -22,20 +21,17 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mule.DefaultMuleMessage;
 import org.mule.MessageExchangePattern;
-import org.mule.api.MuleContext;
 import org.mule.api.MuleEvent;
 import org.mule.api.MuleException;
-import org.mule.api.MuleMessage;
-import org.mule.api.transformer.DataType;
 import org.mule.api.lifecycle.InitialisationException;
 import org.mule.api.transport.PropertyScope;
 import org.mule.construct.Flow;
-import org.mule.transformer.types.DataTypeFactory;
 import org.mule.processor.chain.InterceptingChainLifecycleWrapper;
 import org.mule.processor.chain.SubflowInterceptingChainLifecycleWrapper;
 import org.mule.templates.AbstractTemplatesTestCase;
+import org.mule.transformer.types.DataTypeFactory;
+
 import com.mulesoft.module.batch.BatchTestHelper;
 
 /**
@@ -49,7 +45,7 @@ public class BidirectionalAccountPushNotificationIT extends AbstractTemplatesTes
 	private static final String ANYPOINT_TEMPLATE_NAME = "sfdc2sfdc-bidirectional-account-sync";
 	private static final String A_INBOUND_FLOW_NAME = "triggerSyncFromAFlow";
 	private static final String B_INBOUND_FLOW_NAME = "triggerSyncFromBFlow";
-	private static final String SOURCE_SYSTEM = "A";
+	private static final Map<String,String> HTTP_QUERY_PARAMS_MAP = new HashMap<String,String>(){{ put("source", "A"); }};
 	private static final int TIMEOUT_MILLIS = 60;
 
 	private static List<String> accountsCreatedInA = new ArrayList<String>();
@@ -150,8 +146,8 @@ public class BidirectionalAccountPushNotificationIT extends AbstractTemplatesTes
 		String accountName = buildUniqueName();
 		final MuleEvent testEvent = getTestEvent(null, triggerPushFlow);
 		testEvent.getMessage().setPayload(buildRequest(accountName), DataTypeFactory.create(InputStream.class, "application/xml")); 
-		testEvent.getMessage().setProperty("source", SOURCE_SYSTEM, PropertyScope.INBOUND);
-		
+		testEvent.getMessage().setProperty("http.query.params", HTTP_QUERY_PARAMS_MAP, PropertyScope.INBOUND);
+ 		
 		triggerPushFlow.process(testEvent);
 		
 		batchTestHelper.awaitJobTermination(TIMEOUT_MILLIS * 1000, 500);
