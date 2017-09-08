@@ -4,7 +4,7 @@
 	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
 	xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc" xmlns:http="http://www.mulesoft.org/schema/mule/http"
 	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.7.0"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
 http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
@@ -20,11 +20,12 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 	<!-- This is the endpoints file. In this file you should declare all your inbound and outbound endpoints in order to control the access to your integration -->
     <flow name="triggerPushFlow"  initialState="started">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/" doc:name="HTTP"/>
-
-        <expression-component doc:name="acquire lock"><![CDATA[app.registry['PollSynchronizer'].lock();]]></expression-component>
-        <set-variable variableName="sourceSystem" value="#[message.inboundProperties.'http.query.params'.get('source')]" doc:name="set 'sourceSystem' variable"/>
-        <dw:transform-message doc:name="XML To Account">
-            <dw:set-payload><![CDATA[%dw 1.0
+        <choice doc:name="Trigger policy">
+            <when expression="#['push' == '${trigger.policy}']">
+                <expression-component doc:name="acquire lock"><![CDATA[app.registry['PollSynchronizer'].lock();]]></expression-component>
+                <set-variable variableName="sourceSystem" value="#[message.inboundProperties.'http.query.params'.get('source')]" doc:name="set 'sourceSystem' variable"/>
+                <dw:transform-message doc:name="XML To Account">
+                    <dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
 payload.Envelope.Body.notifications.*Notification map
@@ -47,24 +48,28 @@ BillingCountry: $.sObject.BillingCountry,
 BillingPostalCode: $.sObject.BillingPostalCode,
 BillingState: $.sObject.BillingState,
 BillingStreet: $.sObject.BillingStreet,
-LastModifiedDate: $.sObject.LastModifiedDate
+LastModifiedDate: $.sObject.LastModifiedDate,
+LastModifiedId: $.sObject.LastModifiedId
 }]]></dw:set-payload>
-        </dw:transform-message>
-
-        <choice doc:name="Choice">
-            <when expression="#[flowVars['sourceSystem'] == 'B']">
-                <batch:execute name="fromSalesforceBtoSalesforceABatch" doc:name="trigger from SalesforceB to SalesforceA batch"/>
-            </when>
-            <when expression="#[flowVars['sourceSystem'] == 'A']">
-                <batch:execute name="fromSalesforceAtoSalesforceBBatch" doc:name="trigger from SalesforceA to SalesforceB batch"/>
+                </dw:transform-message>
+                <choice doc:name="Choice">
+                    <when expression="#[(flowVars.sourceSystem == 'B') &amp;&amp; (payload[0].LastModifiedById != '${sfdc.b.integration.user.id}')]">
+                        <batch:execute name="fromSalesforceBtoSalesforceABatch" doc:name="fromSalesforceBtoSalesforceABatch"/>
+                    </when>
+                    <when expression="#[(flowVars.sourceSystem == 'A') &amp;&amp; (payload[0].LastModifiedById != '${sfdc.a.integration.user.id}')]">
+                        <batch:execute name="fromSalesforceAtoSalesforceBBatch" doc:name="fromSalesforceAtoSalesforceBBatch"/>
+                    </when>
+                    <otherwise>
+                        <logger message="'sourceSystem' url parameter not set in outbound message - message ignored" level="INFO" doc:name="Logger"/>
+                    </otherwise>
+                </choice>
             </when>
             <otherwise>
-                <logger message="'sourceSystem' url parameter not set in outbound message - message ignored" level="INFO" doc:name="Logger"/>
+                <logger message="Trigger policy has been set to POLL. Skipping this message" level="INFO" doc:name="Logger"/>
             </otherwise>
         </choice>
-
-
         <set-payload value="&lt;soapenv:Envelope xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/' xmlns:out='http://soap.sforce.com/2005/09/outbound'&gt;&lt;soapenv:Header/&gt;&lt;soapenv:Body&gt;&lt;out:notificationsResponse&gt;&lt;out:Ack&gt;true&lt;/out:Ack&gt;&lt;/out:notificationsResponse&gt;&lt;/soapenv:Body&gt;&lt;/soapenv:Envelope&gt;" doc:name="Set HTTP response body"/>
+
 
         <exception-strategy ref="defaultChoiceExceptionStrategy" doc:name="Reference Exception Strategy"/>
     </flow>
@@ -76,13 +81,21 @@ LastModifiedDate: $.sObject.LastModifiedDate
 			<fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="10000" />
 			<watermark variable="lastQueryDateA" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]" />
             <processor-chain doc:name="Processor Chain">
-                <expression-component doc:name="acquire lock"><![CDATA[app.registry['PollSynchronizer'].lock();]]></expression-component>
-                <sfdc:query config-ref="SalesforceA" query="dsql:SELECT AccountNumber,AccountSource,AnnualRevenue,BillingCity,BillingCountry,BillingPostalCode,BillingState,BillingStreet,Description,Fax,Id,Industry,LastModifiedById,LastModifiedDate,Name,NumberOfEmployees,OwnerId,Ownership,ParentId,Phone,Rating,ShippingCity,ShippingCountry,ShippingPostalCode,ShippingState,ShippingStreet,Sic,SicDesc,Site,TickerSymbol,Type,Website FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDateA']] AND LastModifiedById &lt;&gt; '${sfdc.a.integration.user.id}' ORDER BY LastModifiedDate ASC LIMIT 200" doc:name="fetch accounts from A"/>
+
+                <sfdc:query config-ref="SalesforceA" query="dsql:SELECT AccountNumber,AccountSource,AnnualRevenue,BillingCity,BillingCountry,BillingPostalCode,BillingState,BillingStreet,Description,Fax,Id,Industry,LastModifiedById,LastModifiedDate,Name,NumberOfEmployees,OwnerId,Ownership,ParentId,Phone,Rating,ShippingCity,ShippingCountry,ShippingPostalCode,ShippingState,ShippingStreet,Sic,SicDesc,Site,TickerSymbol,Type,Website FROM Account WHERE LastModifiedDate &gt; #[flowVars.lastQueryDateA] AND LastModifiedById &lt;&gt; '${sfdc.a.integration.user.id}' ORDER BY LastModifiedDate ASC LIMIT 200" doc:name="fetch accounts from A"/>
             </processor-chain>
 
 		</poll>
+        <choice doc:name="Trigger policy">
+            <when expression="#['poll' == '${trigger.policy}']">
+                <expression-component doc:name="acquire lock"><![CDATA[app.registry['PollSynchronizer'].lock();]]></expression-component>
+                <batch:execute name="fromSalesforceAtoSalesforceBBatch" doc:name="fromSalesforceAtoSalesforceBBatch"/>
+            </when>
+            <otherwise>
+                <logger message="Trigger policy has been set to PUSH. Skipping this message" level="INFO" doc:name="Logger"/>
+            </otherwise>
+        </choice>
 
-        <batch:execute name="fromSalesforceAtoSalesforceBBatch" doc:name="trigger batch execution"/>
         <exception-strategy ref="defaultChoiceExceptionStrategy" doc:name="Reference Exception Strategy"/>
     </flow>
     
@@ -91,14 +104,22 @@ LastModifiedDate: $.sObject.LastModifiedDate
 			<fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="10000" />
 			<watermark variable="lastQueryDateB" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]" />
             <processor-chain doc:name="Processor Chain">
-                <expression-component doc:name="acquire lock"><![CDATA[app.registry['PollSynchronizer'].lock();]]></expression-component>
-                <sfdc:query config-ref="SalesforceB" query="dsql:SELECT AccountNumber,AccountSource,AnnualRevenue,BillingCity,BillingCountry,BillingPostalCode,BillingState,BillingStreet,Description,Fax,Id,Industry,LastModifiedById,LastModifiedDate,Name,NumberOfEmployees,OwnerId,Ownership,ParentId,Phone,Rating,ShippingCity,ShippingCountry,ShippingPostalCode,ShippingState,ShippingStreet,Sic,SicDesc,Site,TickerSymbol,Type,Website FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDateB']] AND LastModifiedById &lt;&gt; '${sfdc.b.integration.user.id}' ORDER BY LastModifiedDate ASC LIMIT 200" doc:name="fetch accounts from B"/>
+
+                <sfdc:query config-ref="SalesforceB" query="dsql:SELECT AccountNumber,AccountSource,AnnualRevenue,BillingCity,BillingCountry,BillingPostalCode,BillingState,BillingStreet,Description,Fax,Id,Industry,LastModifiedById,LastModifiedDate,Name,NumberOfEmployees,OwnerId,Ownership,ParentId,Phone,Rating,ShippingCity,ShippingCountry,ShippingPostalCode,ShippingState,ShippingStreet,Sic,SicDesc,Site,TickerSymbol,Type,Website FROM Account WHERE LastModifiedDate &gt; #[flowVars.lastQueryDateB] AND LastModifiedById &lt;&gt; '${sfdc.b.integration.user.id}' ORDER BY LastModifiedDate ASC LIMIT 200" doc:name="fetch accounts from B"/>
             </processor-chain>
 
 
 		</poll>
+        <choice doc:name="Trigger Policy">
+            <when expression="#['poll' == '${trigger.policy}']">
+                <expression-component doc:name="acquire lock"><![CDATA[app.registry['PollSynchronizer'].lock();]]></expression-component>
+                <batch:execute name="fromSalesforceBtoSalesforceABatch" doc:name="fromSalesforceBtoSalesforceABatch"/>
+            </when>
+            <otherwise>
+                <logger message="Trigger policy has been set to PUSH. Skipping this message" level="INFO" doc:name="Logger"/>
+            </otherwise>
+        </choice>
 
-        <batch:execute name="fromSalesforceBtoSalesforceABatch" doc:name="trigger batch execution"/>
         <exception-strategy ref="defaultChoiceExceptionStrategy" doc:name="Reference Exception Strategy"/>
     </flow>
 

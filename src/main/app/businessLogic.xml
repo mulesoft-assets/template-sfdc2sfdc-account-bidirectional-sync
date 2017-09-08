@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.7.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
 http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd
@@ -12,7 +12,9 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
         <batch:process-records>
             <batch:step name="forEachAccountInSalesforceBGetAccountFromSalesforceAStep">
                 <enricher doc:name="set Id and LastModifiedDate from matching account"  >
-                    <sfdc:query-single config-ref="SalesforceA" query="SELECT Id, LastModifiedDate FROM Account WHERE (Name = '#[payload['Name']]')" doc:name="query Account in Salesforce Instance A"/>
+                    <sfdc:query-single config-ref="SalesforceA" 
+                    	query="SELECT Id, LastModifiedDate FROM Account WHERE (Name = '#[payload.Name]')" 
+                    	doc:name="query Account in Salesforce Instance A"/>
                     <enrich source="payload == null ? null : payload.Id" target="payload.Id"/>
                     <enrich source="payload == null ? null : payload.LastModifiedDate" target="payload.LastModifiedDateA"/>
                 </enricher>
@@ -43,7 +45,8 @@ payload map {
 	BillingCity: $.BillingCity,
 	BillingCountry: $.BillingCountry,
 	BillingPostalCode: $.BillingPostalCode,
-	BillingState: $.BillingState
+	BillingState: $.BillingState,
+	BillingStreet: $.BillingStreet
 }]]></dw:set-payload>
                     </dw:transform-message>
                     <sfdc:upsert config-ref="SalesforceA" externalIdFieldName="Id" type="Account" doc:name="upsert Accounts in Salesforce Instance A">
@@ -63,7 +66,7 @@ payload map {
         <batch:process-records>
             <batch:step name="forEachAccountInSalesforceAGetAccountFromSalesforceBStep">
                 <enricher doc:name="set Id and LastModifiedDate from matching account"  >
-                    <sfdc:query-single config-ref="SalesforceB" query="SELECT Id, LastModifiedDate FROM Account WHERE (Name = '#[payload['Name']]')" doc:name="query Account in Salesforce Instance B"/>
+                    <sfdc:query-single config-ref="SalesforceB" query="SELECT Id, LastModifiedDate FROM Account WHERE (Name = '#[payload.Name]')" doc:name="query Account in Salesforce Instance B"/>
 					<enrich source="payload == null ? null : payload.Id" target="payload.Id"/>
                     <enrich source="payload == null ? null : payload.LastModifiedDate" target="payload.LastModifiedDateB"/>
                 </enricher>
@@ -72,7 +75,6 @@ payload map {
 <batch:commit size="200" doc:name="Batch Commit">
                     <dw:transform-message doc:name="map Salesforce Accounts">
                         <dw:set-payload><![CDATA[%dw 1.0
-%input payload application/java
 %output application/java
 ---
 payload map {
@@ -82,10 +84,10 @@ payload map {
 	Name: $.Name,
 	NumberOfEmployees : $.NumberOfEmployees as :number {class: "java.lang.Integer"} default 0,
 	Industry: $.Industry,
-	ShippingStreet: $.ShippingStreet,
 	Site: $.Site,
 	Type: $.Type,
 	Website: $.Website,
+	ShippingStreet: $.ShippingStreet,
 	ShippingCity: $.ShippingCity,
 	ShippingCountry: $.ShippingCountry,
 	ShippingPostalCode: $.ShippingPostalCode,
@@ -93,7 +95,8 @@ payload map {
 	BillingCity: $.BillingCity,
 	BillingCountry: $.BillingCountry,
 	BillingPostalCode: $.BillingPostalCode,
-	BillingState: $.BillingState
+	BillingState: $.BillingState, 
+	BillingStreet: $.BillingStreet
 }]]></dw:set-payload>
                     </dw:transform-message>
                     <sfdc:upsert config-ref="SalesforceB" externalIdFieldName="Id" type="Account" doc:name="upsert Accounts in Salesforce Instance B">
