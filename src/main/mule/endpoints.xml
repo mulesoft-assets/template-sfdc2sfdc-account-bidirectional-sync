@@ -14,9 +14,6 @@ http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/cu
 		<logger level="INFO" doc:name="Log about push notification" doc:id="33c971d9-fe8d-4219-8c3a-96eb41796dea" message="Triggered pushFlow" />
 		<choice doc:name="Trigger policy?" doc:id="ab49295a-6cfe-4ff6-b01e-ee10907e9442" >
 			<when expression="#['push' == '${trigger.policy}']" >
-				<os:store key="syncState" doc:name="Set sync state to running" doc:id="5059b820-0895-4454-9e50-e686d0f07758" objectStore="Semaphore">
-					<os:value><![CDATA[running]]></os:value>
-				</os:store>
 				<set-variable value="#[attributes.queryParams.source]" doc:name="set sourceSystem variable" doc:id="dcdeabad-6703-4204-8d42-1c635ca7c275" variableName="sourceSystem"/>
 				<ee:transform doc:name="XML to Account" doc:id="319ace93-f407-4cbc-9bb3-51d89021f6ff" >
 					<ee:message >
@@ -55,7 +52,7 @@ payload.Envelope.Body.notifications.*Notification map {
 						<flow-ref doc:name="fromSalesforceBtoSalesforceA" doc:id="894b1f2d-c776-48a1-85e4-ce62c80a06dd" name="fromSalesforceBtoSalesforceA"/>
 					</when>
 					<otherwise >
-						<logger level="INFO" doc:name="Logger" doc:id="78f56fc8-b31b-4ba1-9444-10b31e17947b" message="'sourceSystem' url parameter not set - message ignored"/>
+						<logger level="INFO" doc:name="Source system not set" doc:id="78f56fc8-b31b-4ba1-9444-10b31e17947b" message="'sourceSystem' url parameter not set - message ignored"/>
 					</otherwise>
 				</choice>
 			
