@@ -76,14 +76,14 @@ payload.Envelope.Body.notifications.*Notification map {
 		</scheduler>
 		<choice doc:name="Trigger policy?" doc:id="174292b4-ef81-47ec-b656-36bd73a9a83e" >
 			<when expression="#['poll' == '${trigger.policy}']" >
-				<os:retrieve key="syncState" doc:name="Retrieve sync state" objectStore="Semaphore" target="syncState">
+				<os:retrieve key="syncState" doc:name="Retrieve sync state" objectStore="SchedulerStatus" target="syncState">
 			<os:default-value><![CDATA[fromA]]></os:default-value>
 
 		</os:retrieve>
 				<choice doc:name="SyncState?" doc:id="b4703d83-780b-4e2d-bf5d-51b1566d66e2">
 			<when expression="#[(vars.syncState != 'running' and vars.syncState == 'fromA') or vars.syncState == null]">
 				<logger level="INFO" doc:name="running from A" doc:id="c9cd1c27-5978-4ad8-b87f-99da49944447" message="running from A" />
-				<os:store key="syncState" doc:name="Set sync state to running" doc:id="340ac5e0-764f-4164-aeaa-14e616987553" objectStore="Semaphore">
+				<os:store key="syncState" doc:name="Set sync state to running" doc:id="340ac5e0-764f-4164-aeaa-14e616987553" objectStore="SchedulerStatus">
 					<os:value><![CDATA[running]]></os:value>
 				</os:store>
 				<flow-ref doc:name="sfdcQueryFlowA" doc:id="b0c87553-d459-4f12-940c-0f8f19892266" name="sfdcQueryFlowA"/>
@@ -93,7 +93,7 @@ payload.Envelope.Body.notifications.*Notification map {
 </when>
 			<when expression="#[vars.syncState != 'running' and vars.syncState == 'fromB']">
 				<logger level="INFO" doc:name="running from B" doc:id="840599bf-2442-45d6-b66d-fbe11593bd60" message="running from B" />
-				<os:store key="syncState" doc:name="Set sync state to running" doc:id="5059b820-0895-4454-9e50-e686d0f07758" objectStore="Semaphore">
+				<os:store key="syncState" doc:name="Set sync state to running" doc:id="5059b820-0895-4454-9e50-e686d0f07758" objectStore="SchedulerStatus">
 					<os:value><![CDATA[running]]></os:value>
 				</os:store>
 				<flow-ref doc:name="sfdcQueryFlowB" doc:id="121efa5b-33a7-4c76-aa72-3112507c4c0b" name="sfdcQueryFlowB"/>
