@@ -36,7 +36,7 @@ payload ++ {
 						</ee:message>
 					</ee:transform>
 				</batch:step>
-				<batch:step name="forEachAccountToBeUpsertedInSalesforceB" doc:id="78a74ab4-9b91-416d-985a-acda2ac377eb" acceptExpression="'payload.Id == null  or (payload.LastModifiedDateB &lt; payload.LastModifiedDate)'">
+				<batch:step name="forEachAccountToBeUpsertedInSalesforceB" doc:id="78a74ab4-9b91-416d-985a-acda2ac377eb" acceptExpression="#['payload.Id == null  or (payload.LastModifiedDateB &lt; payload.LastModifiedDate)']">
 					<batch:aggregator doc:name="Batch Aggregator" doc:id="1ad86a98-643e-494a-a90a-32daab0b03cc" size="${page.size}">
 						<ee:transform doc:name="map Salesforce Accounts" doc:id="d484063f-6d81-42ce-98ef-7cec51b04672">
 							<ee:message>
@@ -101,7 +101,7 @@ payload ++ {
 						</ee:message>
 					</ee:transform>
 				</batch:step>
-				<batch:step name="forEachAccountToBeUpsertedInSalesforceA" doc:id="78a74ab4-9b91-416d-985a-acda2ac377eb" acceptExpression="'payload.Id == null  or (payload.LastModifiedDateA &lt; payload.LastModifiedDate)'">
+				<batch:step name="forEachAccountToBeUpsertedInSalesforceA" doc:id="78a74ab4-9b91-416d-985a-acda2ac377eb" acceptExpression="#['payload.Id == null  or (payload.LastModifiedDateA &lt; payload.LastModifiedDate)']">
 					<batch:aggregator doc:name="Batch Aggregator" doc:id="1ad86a98-643e-494a-a90a-32daab0b03cc" size="${page.size}">
 						<ee:transform doc:name="map Salesforce Accounts" doc:id="d484063f-6d81-42ce-98ef-7cec51b04672">
 							<ee:message>
