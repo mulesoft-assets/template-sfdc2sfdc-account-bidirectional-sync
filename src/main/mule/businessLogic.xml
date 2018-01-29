@@ -3,14 +3,11 @@
 <mule xmlns:os="http://www.mulesoft.org/schema/mule/os"
 	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
 	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
-	xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:email="http://www.mulesoft.org/schema/mule/email"
-	xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
-	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+	xmlns:batch="http://www.mulesoft.org/schema/mule/batch" 
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
-http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd 
-http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
-http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
 http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
 http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
 http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
@@ -39,7 +36,7 @@ payload ++ {
 						</ee:message>
 					</ee:transform>
 				</batch:step>
-				<batch:step name="forEachAccountToBeUpsertedInSalesforceB" doc:id="78a74ab4-9b91-416d-985a-acda2ac377eb" acceptExpression="'payload.Id == null  or (payload.LastModifiedDateB &lt; payload.LastModifiedDate)'">
+				<batch:step name="forEachAccountToBeUpsertedInSalesforceB" doc:id="78a74ab4-9b91-416d-985a-acda2ac377eb" acceptExpression="#[payload.Id == null  or (payload.LastModifiedDateB &lt; payload.LastModifiedDate)]">
 					<batch:aggregator doc:name="Batch Aggregator" doc:id="1ad86a98-643e-494a-a90a-32daab0b03cc" size="${page.size}">
 						<ee:transform doc:name="map Salesforce Accounts" doc:id="d484063f-6d81-42ce-98ef-7cec51b04672">
 							<ee:message>
@@ -84,7 +81,7 @@ payload map {
 		<batch:job jobName="fromSalesforceBtoSalesforceABatch" doc:id="204892ae-0d97-4326-beae-310c8d52b7a6">
 			<batch:process-records>
 				<batch:step name="forEachAccountInSalesforceBGetAccountFromSalesforceAStep" doc:id="89713774-362a-4e92-9bdc-41e31802bf38">
-					<salesforce:query-single config-ref="Salesforce_Sfdc_A_config" doc:name="Query Account in Salesforce instance A" doc:id="e828fbe5-8917-4833-a479-8df69b560884" target="IdDateInB">
+					<salesforce:query-single config-ref="Salesforce_Sfdc_A_config" doc:name="Query Account in Salesforce instance A" doc:id="e828fbe5-8917-4833-a479-8df69b560884" target="IdDateInA">
 						<salesforce:salesforce-query>SELECT Id, LastModifiedDate FROM Account WHERE Name = ':name'</salesforce:salesforce-query>
 						<salesforce:parameters><![CDATA[#[output applicaton/java
 ---
@@ -104,7 +101,7 @@ payload ++ {
 						</ee:message>
 					</ee:transform>
 				</batch:step>
-				<batch:step name="forEachAccountToBeUpsertedInSalesforceA" doc:id="78a74ab4-9b91-416d-985a-acda2ac377eb" acceptExpression="'payload.Id == null  or (payload.LastModifiedDateA &lt; payload.LastModifiedDate)'">
+				<batch:step name="forEachAccountToBeUpsertedInSalesforceA" doc:id="78a74ab4-9b91-416d-985a-acda2ac377eb" acceptExpression="#[payload.Id == null  or (payload.LastModifiedDateA &lt; payload.LastModifiedDate)]">
 					<batch:aggregator doc:name="Batch Aggregator" doc:id="1ad86a98-643e-494a-a90a-32daab0b03cc" size="${page.size}">
 						<ee:transform doc:name="map Salesforce Accounts" doc:id="d484063f-6d81-42ce-98ef-7cec51b04672">
 							<ee:message>
