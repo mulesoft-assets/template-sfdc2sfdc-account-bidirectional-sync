@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+	xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<munit:config name="new-test-suite.xml" />
+	<configuration-properties doc:name="Configuration properties" file="mule.test.properties" />
+	<configuration-properties doc:name="Configuration properties" file="common.properties" />
+	<configuration-properties doc:name="Configuration properties" file="mule-artifact.properties" />
+	<salesforce:sfdc-config name="Salesforce_Sfdc_A_test_config" doc:name="Salesforce Sfdc A test config">
+		<salesforce:basic-connection username="${test.sfdc.a.username}"
+				password="${test.sfdc.a.password}" 
+				securityToken="${test.sfdc.a.securityToken}" />
+	</salesforce:sfdc-config>
+	<salesforce:sfdc-config name="Salesforce_Sfdc_B_test_config" doc:name="Salesforce Sfdc B test config">
+		<salesforce:basic-connection username="${test.sfdc.b.username}"
+				password="${test.sfdc.b.password}" 
+				securityToken="${test.sfdc.b.securityToken}" />
+	</salesforce:sfdc-config>
+	
+	<munit:before-test name="test-suiteBefore_Test" description="Before tests actions" >
+		<ee:transform doc:name="Prepare testing data(instance A)" doc:id="899ac5a5-a7be-4335-b8d6-e34a60b2168d">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+--- 
+[{
+	Description: "test description1",
+	Name: "Integration TestName1",
+	Industry: "Education",
+	NumberOfEmployees: 15001
+},
+{
+	Description: "test description2",
+	Name: "Integration TestName2",
+	Industry: "Education",
+ 	NumberOfEmployees: 100
+}
+]]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+		<salesforce:create type="Account" doc:name="Create Accounts in instance A" config-ref="Salesforce_Sfdc_A_test_config" />
+		<set-variable value="#[payload map ($.id)]" doc:name="Store IDs to variable sfdcAIds" variableName="sfdcAIds" />
+		<ee:transform doc:name="Prepare testing data(instance B)" doc:id="8ce6e8a6-55fb-41d6-85b2-38d8f89b33ce">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+[{
+	Description: "test description3",
+	Name: "Integration TestName2",
+	Industry: "Energy",
+ 	NumberOfEmployees: 15001
+ },
+{ 
+	Description: "test description4",
+	Name: "Integration TestName4",
+	Industry: "Education",
+	NumberOfEmployees: 15001 
+} 
+] 
+	]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:create doc:name="Create Accounts in instance B" config-ref="Salesforce_Sfdc_B_test_config" type="Account" />
+		<set-variable value="#[payload map ($.id)]" doc:name="Store IDs to variable sfdcBIds" variableName="sfdcBIds" />
+	</munit:before-test>
+	<munit:test name="test-suite-sfdcQueryFlowATest" description="Test" doc:id="6332c58f-ba5b-451a-8ca7-8d677e31fa9d" >
+		<munit:execution >
+			<scripting:execute doc:name="Sleep for 10s before we start tests" doc:id="68f96218-bb52-4fbc-92c8-1b014988e3e2" engine="groovy">
+				<scripting:code >sleep(10000)</scripting:code>
+			</scripting:execute>
+			<flow-ref doc:name="Flow-ref to sfdcQueryFlowA" doc:id="e0479714-bce3-4ea8-9fbc-1c8ed7b5d185" name="sfdcQueryFlowA"/>
+		<flow-ref doc:name="Flow-ref to fromSalesforceAtoSalesforceB" doc:id="5592c1fa-6dc8-4956-b894-e0e2b025918f" name="fromSalesforceAtoSalesforceB"/>
+			<scripting:execute doc:name="Sleep for 30s until the processing is completed" doc:id="b09fe305-3000-4571-b824-8b555395ccb7" engine="groovy">
+				<scripting:code >sleep(30000)</scripting:code>
+			</scripting:execute>
+			<salesforce:query doc:name="Query for Account, which should be not updated in instance B" config-ref="Salesforce_Sfdc_B_config">
+				<salesforce:salesforce-query >SELECT Id FROM Account WHERE Name = ':name2' and Industry = 'Education'</salesforce:salesforce-query>
+				<salesforce:parameters ><![CDATA[#[output applicaton/java
+---
+{
+	"name2" : "Integration TestName2"
+}]]]></salesforce:parameters>
+			</salesforce:query>
+			<set-variable value="#[sizeOf(payload)]" doc:name=" Set Variable for assertion" doc:id="95c89be7-1756-40fd-b198-2b1334bf6979" variableName="resultSize"/>
+			<munit-tools:assert-that doc:name="Assert that we find updated Account" doc:id="1e559409-a86b-47b9-bb44-cbcac54c4ade" expression="#[vars.resultSize]" is="#[MunitTools::equalTo(0)]"/>
+			<salesforce:query doc:name="Query for Account, which should be inserted to instance B" doc:id="145cdbc1-3137-4eef-b8e3-7aea91cb9833" config-ref="Salesforce_Sfdc_B_config">
+				<salesforce:salesforce-query>SELECT Id FROM Account WHERE Name = ':name1' AND Industry = 'Education' AND NumberOfEmployees = 15001</salesforce:salesforce-query>
+				<salesforce:parameters><![CDATA[#[output applicaton/java
+---
+{
+	"name1" : "Integration TestName1"
+}]]]></salesforce:parameters>
+			</salesforce:query>
+			<set-variable value="#[sizeOf(payload)]" doc:name="Set Variable with result size" doc:id="b485fb70-e4a8-4f97-9da9-e0ace1a236c9" variableName="resultSize" />
+			<munit-tools:assert-that doc:name="Assert that we found migrated Account" doc:id="a8f4453a-10c6-4508-8ecf-64cc08e6129c" expression="#[vars.resultSize]" is="#[MunitTools::equalTo(1)]"/>
+			<salesforce:delete doc:name="Delete migrated Accounts from B" doc:id="353f9ea2-b733-4370-9d93-a97ee651f5e4" config-ref="Salesforce_Sfdc_B_config">
+				<salesforce:delete-ids ><![CDATA[#[payload map ($.Id)]]]></salesforce:delete-ids>
+			</salesforce:delete>
+		</munit:execution>
+		<munit:validation>
+			<munit-tools:verify-call doc:name="Verify call" doc:id="d169a8c9-05fa-410f-bf1f-679ac50991ea" processor="salesforce:upsert-bulk" times="1" />
+			<munit-tools:verify-call doc:name="Verify call" doc:id="6615e195-e10d-4e56-8116-3ab61227a26c" processor="ee:transform" atLeast="1">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute attributeName="doc:id" whereValue="c119f87d-9095-4962-b961-efe507b06a0c" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="test-suite-sfdcQueryFlowBTest" description="Test" doc:id="a1717021-c9a9-4eaf-8798-43d65a776cc3">
+		<munit:execution >
+			<scripting:execute doc:name="Sleep for 10s before we start tests" doc:id="68f96218-bb52-4fbc-92c8-1b014988e3e2" engine="groovy">
+				<scripting:code >sleep(10000)</scripting:code>
+			</scripting:execute>
+			<flow-ref doc:name="sfdcQueryFlowB" doc:id="e0479714-bce3-4ea8-9fbc-1c8ed7b5d185" name="sfdcQueryFlowB"/>
+		<flow-ref doc:name="fromSalesforceBtoSalesforceA" doc:id="5592c1fa-6dc8-4956-b894-e0e2b025918f" name="fromSalesforceBtoSalesforceA"/>
+			<scripting:execute doc:name="Sleep for 30s until the processing is completed" doc:id="b09fe305-3000-4571-b824-8b555395ccb7" engine="groovy">
+				<scripting:code >sleep(30000)</scripting:code>
+			</scripting:execute>
+			<salesforce:query doc:name="Query for Account, which should be updated in instance A" config-ref="Salesforce_Sfdc_A_config">
+				<salesforce:salesforce-query >SELECT Id FROM Account WHERE Name = ':name2' AND Industry = 'Energy'</salesforce:salesforce-query>
+				<salesforce:parameters ><![CDATA[#[output applicaton/java
+---
+{
+	"name2" : "Integration TestName2"
+}]]]></salesforce:parameters>
+			</salesforce:query>
+			<set-variable value="#[sizeOf(payload)]" doc:name=" Set Variable for assertion" doc:id="95c89be7-1756-40fd-b198-2b1334bf6979" variableName="resultSize"/>
+			<munit-tools:assert-that doc:name="Assert that we find updated Account" doc:id="1e559409-a86b-47b9-bb44-cbcac54c4ade" expression="#[vars.resultSize]" is="#[MunitTools::equalTo(1)]"/>
+			<salesforce:query doc:name="Query for Account, which should be inserted to instance A" doc:id="145cdbc1-3137-4eef-b8e3-7aea91cb9833" config-ref="Salesforce_Sfdc_A_config">
+				<salesforce:salesforce-query>SELECT Id FROM Account WHERE Name = ':name1' AND Industry = 'Education' AND NumberOfEmployees = 15001</salesforce:salesforce-query>
+				<salesforce:parameters><![CDATA[#[output applicaton/java
+---
+{
+	"name1" : "Integration TestName4"
+}]]]></salesforce:parameters>
+			</salesforce:query>
+			<set-variable value="#[sizeOf(payload)]" doc:name="Set Variable with result size" doc:id="b485fb70-e4a8-4f97-9da9-e0ace1a236c9" variableName="resultSize" />
+			<munit-tools:assert-that doc:name="Assert that we found migrated Account" doc:id="a8f4453a-10c6-4508-8ecf-64cc08e6129c" expression="#[vars.resultSize]" is="#[MunitTools::equalTo(1)]"/>
+			<salesforce:delete doc:name="Delete migrated Accounts from A" doc:id="353f9ea2-b733-4370-9d93-a97ee651f5e4" config-ref="Salesforce_Sfdc_A_config">
+				<salesforce:delete-ids ><![CDATA[#[payload map ($.Id)]]]></salesforce:delete-ids>
+			</salesforce:delete>
+		</munit:execution>
+		<munit:validation>
+			<munit-tools:verify-call doc:name="Verify call" doc:id="d169a8c9-05fa-410f-bf1f-679ac50991ea" processor="salesforce:upsert-bulk" times="1" />
+			<munit-tools:verify-call doc:name="Verify call" doc:id="6615e195-e10d-4e56-8116-3ab61227a26c" processor="ee:transform" atLeast="1">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute attributeName="doc:id" whereValue="c119f87d-9095-4962-b961-efe507b06a0c" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+
+	<munit:after-test name="test-suiteAfter_Test" description="After tests actions" doc:id="5b85bb9e-67e6-47f7-8f71-53a39f147fc8" >
+			<salesforce:delete doc:name="Delete source Accounts in instance A" doc:id="788956ca-8ada-49c2-a3f7-7eb367e735b4" config-ref="Salesforce_Sfdc_A_test_config">
+					<salesforce:delete-ids><![CDATA[#[vars.sfdcAIds]]]></salesforce:delete-ids>
+				</salesforce:delete>
+		<salesforce:delete doc:name="Delete source Accounts in instance B" doc:id="efc382cb-21e8-4b7e-9e97-586fc405987f" config-ref="Salesforce_Sfdc_B_test_config">
+			<salesforce:delete-ids ><![CDATA[#[vars.sfdcBIds]]]></salesforce:delete-ids>
+		</salesforce:delete>
+		
+	
+</munit:after-test>
+
+</mule>

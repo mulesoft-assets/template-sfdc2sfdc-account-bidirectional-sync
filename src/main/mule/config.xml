@@ -23,8 +23,7 @@ http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/cu
 			<salesforce:basic-connection 
 				username="${sfdc.a.username}"
 				password="${sfdc.a.password}" 
-				securityToken="${sfdc.a.securityToken}" 
-				url="${sfdc.a.url}"/>
+				securityToken="${sfdc.a.securityToken}" />
 		</salesforce:sfdc-config>
 		
 		<salesforce:sfdc-config name="Salesforce_Sfdc_B_config"
@@ -32,8 +31,7 @@ http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/cu
 			<salesforce:basic-connection 
 				username="${sfdc.b.username}"
 				password="${sfdc.b.password}" 
-				securityToken="${sfdc.b.securityToken}" 
-				url="${sfdc.b.url}"/>
+				securityToken="${sfdc.b.securityToken}" />
 		</salesforce:sfdc-config>		
 		<configuration-properties file="mule.${mule.env}.properties" doc:name="Configuration properties" doc:id="46877740-aac5-4812-8728-4718689aa9ec" />	
 		<configuration-properties file="common.properties" doc:name="Configuration properties" doc:id="dffa4da7-cc5c-4ecb-922e-1115b4387354" />
