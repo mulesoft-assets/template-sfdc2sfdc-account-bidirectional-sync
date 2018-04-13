@@ -28,6 +28,27 @@ http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mu
 	</salesforce:sfdc-config>
 	
 	<munit:before-test name="test-suiteBefore_Test" description="Before tests actions" >
+	
+	<ee:transform doc:name="Prepare common testing data"
+			doc:id="1fca4444-cfe9-452e-b3fa-5d2aad0a3678">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="testName1" ><![CDATA[%dw 2.0
+output application/java
+---
+"test" ++ (uuid() splitBy("-"))[0] ++ "Name"]]></ee:set-variable>
+				<ee:set-variable variableName="testName2" ><![CDATA[%dw 2.0
+output application/java
+---
+"test" ++ (uuid() splitBy("-"))[0] ++ "Name"]]></ee:set-variable>
+				<ee:set-variable variableName="testName4" ><![CDATA[%dw 2.0
+output application/java
+---
+"test" ++ (uuid() splitBy("-"))[0] ++ "Name"]]></ee:set-variable>
+			
+</ee:variables>
+		</ee:transform>
 		<ee:transform doc:name="Prepare testing data(instance A)" doc:id="899ac5a5-a7be-4335-b8d6-e34a60b2168d">
 					<ee:message>
 						<ee:set-payload><![CDATA[%dw 2.0
@@ -35,13 +56,13 @@ output application/java
 --- 
 [{
 	Description: "test description1",
-	Name: "Integration TestName1",
+	Name: vars.testName1,
 	Industry: "Education",
 	NumberOfEmployees: 15001
 },
 {
 	Description: "test description2",
-	Name: "Integration TestName2",
+	Name: vars.testName2,
 	Industry: "Education",
  	NumberOfEmployees: 100
 }
@@ -57,13 +78,13 @@ output application/java
 ---
 [{
 	Description: "test description3",
-	Name: "Integration TestName2",
+	Name: vars.testName2,
 	Industry: "Energy",
  	NumberOfEmployees: 15001
  },
 { 
 	Description: "test description4",
-	Name: "Integration TestName4",
+	Name: vars.testName4,
 	Industry: "Education",
 	NumberOfEmployees: 15001 
 } 
@@ -89,7 +110,7 @@ output application/java
 				<salesforce:parameters ><![CDATA[#[output applicaton/java
 ---
 {
-	"name2" : "Integration TestName2"
+	"name2" : vars.testName2
 }]]]></salesforce:parameters>
 			</salesforce:query>
 			<set-variable value="#[sizeOf(payload)]" doc:name=" Set Variable for assertion" doc:id="95c89be7-1756-40fd-b198-2b1334bf6979" variableName="resultSize"/>
@@ -99,7 +120,7 @@ output application/java
 				<salesforce:parameters><![CDATA[#[output applicaton/java
 ---
 {
-	"name1" : "Integration TestName1"
+	"name1" : vars.testName1
 }]]]></salesforce:parameters>
 			</salesforce:query>
 			<set-variable value="#[sizeOf(payload)]" doc:name="Set Variable with result size" doc:id="b485fb70-e4a8-4f97-9da9-e0ace1a236c9" variableName="resultSize" />
@@ -132,7 +153,7 @@ output application/java
 				<salesforce:parameters ><![CDATA[#[output applicaton/java
 ---
 {
-	"name2" : "Integration TestName2"
+	"name2" : vars.testName2
 }]]]></salesforce:parameters>
 			</salesforce:query>
 			<set-variable value="#[sizeOf(payload)]" doc:name=" Set Variable for assertion" doc:id="95c89be7-1756-40fd-b198-2b1334bf6979" variableName="resultSize"/>
@@ -142,7 +163,7 @@ output application/java
 				<salesforce:parameters><![CDATA[#[output applicaton/java
 ---
 {
-	"name1" : "Integration TestName4"
+	"name1" : vars.testName4
 }]]]></salesforce:parameters>
 			</salesforce:query>
 			<set-variable value="#[sizeOf(payload)]" doc:name="Set Variable with result size" doc:id="b485fb70-e4a8-4f97-9da9-e0ace1a236c9" variableName="resultSize" />
