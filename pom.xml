@@ -62,7 +62,8 @@
             <artifactId>munit-runner</artifactId>
             <classifier>mule-plugin</classifier>
             <scope>test</scope>
-        </dependency>	<dependency>
+        </dependency>
+        <dependency>
             <groupId>com.mulesoft.munit</groupId>
             <artifactId>munit-tools</artifactId>
             <classifier>mule-plugin</classifier>
