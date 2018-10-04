@@ -1,5 +1,5 @@
 
-# Anypoint Template: Salesforce to Salesforce Account Bidirectional Synchronization
+# Template: Salesforce Org to Org Account Bi-Directional Sync
 
 Bi-directionally synchronizes account data between two Salesforce Orgs. This template makes it fast to configure the fields to be synchronized, how they map, and criteria on when to trigger the synchronization. 
 
