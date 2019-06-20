@@ -114,7 +114,7 @@ output application/java
 }]]]></salesforce:parameters>
 			</salesforce:query>
 			<set-variable value="#[sizeOf(payload)]" doc:name=" Set Variable for assertion" doc:id="95c89be7-1756-40fd-b198-2b1334bf6979" variableName="resultSize"/>
-			<munit-tools:assert-that doc:name="Assert that we find updated Account" doc:id="1e559409-a86b-47b9-bb44-cbcac54c4ade" expression="#[vars.resultSize]" is="#[MunitTools::equalTo(0)]"/>
+			<munit-tools:assert-that doc:name="Assert that we find updated Account" doc:id="1e559409-a86b-47b9-bb44-cbcac54c4ade" expression="#[vars.resultSize]" is="#[MunitTools::equalTo(0)]" message="Assert that we find updated Account has failed"/>
 			<salesforce:query doc:name="Query for Account, which should be inserted to instance B" doc:id="145cdbc1-3137-4eef-b8e3-7aea91cb9833" config-ref="Salesforce_Sfdc_B_config">
 				<salesforce:salesforce-query>SELECT Id FROM Account WHERE Name = ':name1' AND Industry = 'Education' AND NumberOfEmployees = 15001</salesforce:salesforce-query>
 				<salesforce:parameters><![CDATA[#[output applicaton/java
@@ -124,7 +124,7 @@ output application/java
 }]]]></salesforce:parameters>
 			</salesforce:query>
 			<set-variable value="#[sizeOf(payload)]" doc:name="Set Variable with result size" doc:id="b485fb70-e4a8-4f97-9da9-e0ace1a236c9" variableName="resultSize" />
-			<munit-tools:assert-that doc:name="Assert that we found migrated Account" doc:id="a8f4453a-10c6-4508-8ecf-64cc08e6129c" expression="#[vars.resultSize]" is="#[MunitTools::equalTo(1)]"/>
+			<munit-tools:assert-that doc:name="Assert that we found migrated Account" doc:id="a8f4453a-10c6-4508-8ecf-64cc08e6129c" expression="#[vars.resultSize]" is="#[MunitTools::equalTo(1)]" message="Assert that we found migrated Account has failed"/>
 			<salesforce:delete doc:name="Delete migrated Accounts from B" doc:id="353f9ea2-b733-4370-9d93-a97ee651f5e4" config-ref="Salesforce_Sfdc_B_config">
 				<salesforce:delete-ids ><![CDATA[#[payload map ($.Id)]]]></salesforce:delete-ids>
 			</salesforce:delete>
@@ -157,7 +157,7 @@ output application/java
 }]]]></salesforce:parameters>
 			</salesforce:query>
 			<set-variable value="#[sizeOf(payload)]" doc:name=" Set Variable for assertion" doc:id="95c89be7-1756-40fd-b198-2b1334bf6979" variableName="resultSize"/>
-			<munit-tools:assert-that doc:name="Assert that we find updated Account" doc:id="1e559409-a86b-47b9-bb44-cbcac54c4ade" expression="#[vars.resultSize]" is="#[MunitTools::equalTo(1)]"/>
+			<munit-tools:assert-that doc:name="Assert that we find updated Account" doc:id="1e559409-a86b-47b9-bb44-cbcac54c4ade" expression="#[vars.resultSize]" is="#[MunitTools::equalTo(1)]" message="Assert that we find updated Account has failed"/>
 			<salesforce:query doc:name="Query for Account, which should be inserted to instance A" doc:id="145cdbc1-3137-4eef-b8e3-7aea91cb9833" config-ref="Salesforce_Sfdc_A_config">
 				<salesforce:salesforce-query>SELECT Id FROM Account WHERE Name = ':name1' AND Industry = 'Education' AND NumberOfEmployees = 15001</salesforce:salesforce-query>
 				<salesforce:parameters><![CDATA[#[output applicaton/java
@@ -167,7 +167,7 @@ output application/java
 }]]]></salesforce:parameters>
 			</salesforce:query>
 			<set-variable value="#[sizeOf(payload)]" doc:name="Set Variable with result size" doc:id="b485fb70-e4a8-4f97-9da9-e0ace1a236c9" variableName="resultSize" />
-			<munit-tools:assert-that doc:name="Assert that we found migrated Account" doc:id="a8f4453a-10c6-4508-8ecf-64cc08e6129c" expression="#[vars.resultSize]" is="#[MunitTools::equalTo(1)]"/>
+			<munit-tools:assert-that doc:name="Assert that we found migrated Account" doc:id="a8f4453a-10c6-4508-8ecf-64cc08e6129c" expression="#[vars.resultSize]" is="#[MunitTools::equalTo(1)]" message="Assert that we found migrated Account has failed"/>
 			<salesforce:delete doc:name="Delete migrated Accounts from A" doc:id="353f9ea2-b733-4370-9d93-a97ee651f5e4" config-ref="Salesforce_Sfdc_A_config">
 				<salesforce:delete-ids ><![CDATA[#[payload map ($.Id)]]]></salesforce:delete-ids>
 			</salesforce:delete>
