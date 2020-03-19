@@ -130,7 +130,6 @@ output application/java
 			</salesforce:delete>
 		</munit:execution>
 		<munit:validation>
-			<munit-tools:verify-call doc:name="Verify call" doc:id="d169a8c9-05fa-410f-bf1f-679ac50991ea" processor="salesforce:upsert-bulk" times="1" />
 			<munit-tools:verify-call doc:name="Verify call" doc:id="6615e195-e10d-4e56-8116-3ab61227a26c" processor="ee:transform" atLeast="1">
 				<munit-tools:with-attributes>
 					<munit-tools:with-attribute attributeName="doc:id" whereValue="c119f87d-9095-4962-b961-efe507b06a0c" />
@@ -173,7 +172,6 @@ output application/java
 			</salesforce:delete>
 		</munit:execution>
 		<munit:validation>
-			<munit-tools:verify-call doc:name="Verify call" doc:id="d169a8c9-05fa-410f-bf1f-679ac50991ea" processor="salesforce:upsert-bulk" times="1" />
 			<munit-tools:verify-call doc:name="Verify call" doc:id="6615e195-e10d-4e56-8116-3ab61227a26c" processor="ee:transform" atLeast="1">
 				<munit-tools:with-attributes>
 					<munit-tools:with-attribute attributeName="doc:id" whereValue="c119f87d-9095-4962-b961-efe507b06a0c" />
