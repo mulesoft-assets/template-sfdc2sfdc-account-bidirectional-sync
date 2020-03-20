@@ -70,7 +70,7 @@ output application/java
 					</ee:message>
 				</ee:transform>
 		<salesforce:create type="Account" doc:name="Create Accounts in instance A" config-ref="Salesforce_Sfdc_A_test_config" />
-		<set-variable value="#[payload map ($.id)]" doc:name="Store IDs to variable sfdcAIds" variableName="sfdcAIds" />
+		<set-variable value="#[payload.items map ($.id)]" doc:name="Store IDs to variable sfdcAIds" variableName="sfdcAIds" />
 		<ee:transform doc:name="Prepare testing data(instance B)" doc:id="8ce6e8a6-55fb-41d6-85b2-38d8f89b33ce">
 			<ee:message>
 				<ee:set-payload><![CDATA[%dw 2.0
@@ -93,7 +93,7 @@ output application/java
 			</ee:message>
 		</ee:transform>
 		<salesforce:create doc:name="Create Accounts in instance B" config-ref="Salesforce_Sfdc_B_test_config" type="Account" />
-		<set-variable value="#[payload map ($.id)]" doc:name="Store IDs to variable sfdcBIds" variableName="sfdcBIds" />
+		<set-variable value="#[payload.items map ($.id)]" doc:name="Store IDs to variable sfdcBIds" variableName="sfdcBIds" />
 	</munit:before-test>
 	<munit:test name="test-suite-sfdcQueryFlowATest" description="Test" doc:id="6332c58f-ba5b-451a-8ca7-8d677e31fa9d" >
 		<munit:execution >
@@ -126,11 +126,10 @@ output application/java
 			<set-variable value="#[sizeOf(payload)]" doc:name="Set Variable with result size" doc:id="b485fb70-e4a8-4f97-9da9-e0ace1a236c9" variableName="resultSize" />
 			<munit-tools:assert-that doc:name="Assert that we found migrated Account" doc:id="a8f4453a-10c6-4508-8ecf-64cc08e6129c" expression="#[vars.resultSize]" is="#[MunitTools::equalTo(1)]" message="Assert that we found migrated Account has failed"/>
 			<salesforce:delete doc:name="Delete migrated Accounts from B" doc:id="353f9ea2-b733-4370-9d93-a97ee651f5e4" config-ref="Salesforce_Sfdc_B_config">
-				<salesforce:delete-ids ><![CDATA[#[payload map ($.Id)]]]></salesforce:delete-ids>
+				<salesforce:ids ><![CDATA[#[payload map ($.Id)]]]></salesforce:ids>
 			</salesforce:delete>
 		</munit:execution>
 		<munit:validation>
-			<munit-tools:verify-call doc:name="Verify call" doc:id="d169a8c9-05fa-410f-bf1f-679ac50991ea" processor="salesforce:upsert-bulk" times="1" />
 			<munit-tools:verify-call doc:name="Verify call" doc:id="6615e195-e10d-4e56-8116-3ab61227a26c" processor="ee:transform" atLeast="1">
 				<munit-tools:with-attributes>
 					<munit-tools:with-attribute attributeName="doc:id" whereValue="c119f87d-9095-4962-b961-efe507b06a0c" />
@@ -169,11 +168,10 @@ output application/java
 			<set-variable value="#[sizeOf(payload)]" doc:name="Set Variable with result size" doc:id="b485fb70-e4a8-4f97-9da9-e0ace1a236c9" variableName="resultSize" />
 			<munit-tools:assert-that doc:name="Assert that we found migrated Account" doc:id="a8f4453a-10c6-4508-8ecf-64cc08e6129c" expression="#[vars.resultSize]" is="#[MunitTools::equalTo(1)]" message="Assert that we found migrated Account has failed"/>
 			<salesforce:delete doc:name="Delete migrated Accounts from A" doc:id="353f9ea2-b733-4370-9d93-a97ee651f5e4" config-ref="Salesforce_Sfdc_A_config">
-				<salesforce:delete-ids ><![CDATA[#[payload map ($.Id)]]]></salesforce:delete-ids>
+				<salesforce:ids ><![CDATA[#[payload map ($.Id)]]]></salesforce:ids>
 			</salesforce:delete>
 		</munit:execution>
 		<munit:validation>
-			<munit-tools:verify-call doc:name="Verify call" doc:id="d169a8c9-05fa-410f-bf1f-679ac50991ea" processor="salesforce:upsert-bulk" times="1" />
 			<munit-tools:verify-call doc:name="Verify call" doc:id="6615e195-e10d-4e56-8116-3ab61227a26c" processor="ee:transform" atLeast="1">
 				<munit-tools:with-attributes>
 					<munit-tools:with-attribute attributeName="doc:id" whereValue="c119f87d-9095-4962-b961-efe507b06a0c" />
@@ -184,10 +182,10 @@ output application/java
 
 	<munit:after-test name="test-suiteAfter_Test" description="After tests actions" doc:id="5b85bb9e-67e6-47f7-8f71-53a39f147fc8" >
 			<salesforce:delete doc:name="Delete source Accounts in instance A" doc:id="788956ca-8ada-49c2-a3f7-7eb367e735b4" config-ref="Salesforce_Sfdc_A_test_config">
-					<salesforce:delete-ids><![CDATA[#[vars.sfdcAIds]]]></salesforce:delete-ids>
+					<salesforce:ids><![CDATA[#[vars.sfdcAIds]]]></salesforce:ids>
 				</salesforce:delete>
 		<salesforce:delete doc:name="Delete source Accounts in instance B" doc:id="efc382cb-21e8-4b7e-9e97-586fc405987f" config-ref="Salesforce_Sfdc_B_test_config">
-			<salesforce:delete-ids ><![CDATA[#[vars.sfdcBIds]]]></salesforce:delete-ids>
+			<salesforce:ids ><![CDATA[#[vars.sfdcBIds]]]></salesforce:ids>
 		</salesforce:delete>
 		
 	
